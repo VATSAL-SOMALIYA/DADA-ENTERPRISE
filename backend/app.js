@@ -5,6 +5,7 @@ const cookieParser = require("cookie-parser");
 
 // 1. Import your Route files (The Waiters)
 const authRoutes = require("./src/routes/authRoutes");
+const customerRoutes = require("./src/routes/customerRoutes"); // ADD THIS
 const dashboardRoutes = require("./src/routes/dashboardRoutes");
 
 const app = express();
@@ -21,6 +22,9 @@ app.use(cookieParser()); // Reads the secure JWT cookies
 // --- ROUTE MOUNTING ---
 app.use("/", authRoutes);
 app.use("/dashboard", dashboardRoutes);
+app.use("/customer", customerRoutes);
+
+
 
 // --- START SERVER ---
 const PORT = process.env.PORT || 5000;

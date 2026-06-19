@@ -23,8 +23,12 @@ exports.handleLogin = async (req, res) => {
       return res.render("pages/login", { error: "Invalid email or password" });
     }
     // correct password
+    // THE CORRECTED CODE:
     const token = jwt.sign(
-      { id: user.id },
+      {
+        id: user.id,
+        customer_id: user.customer_id, // Add this line!
+      },
       process.env.JWT_SECRET || "fallback_secret_key",
       { expiresIn: "1d" },
     );
@@ -41,4 +45,10 @@ exports.handleLogin = async (req, res) => {
       error: "An error occurred. Please try again.",
     });
   }
+};
+
+// Logs the user out by destroying the secure cookie
+exports.logout = (req, res) => {
+  res.clearCookie("token");
+  res.redirect("/");
 };

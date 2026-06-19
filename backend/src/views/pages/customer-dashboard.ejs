@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DADA Enterprise | Client Portal</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = { theme: { extend: { colors: { background: 'var(--background)', foreground: 'var(--foreground)', primary: 'var(--primary)', 'primary-fg': 'var(--primary-foreground)', muted: 'var(--muted)', 'muted-fg': 'var(--muted-foreground)', border: 'var(--border)', card: 'var(--card)', accent: 'var(--accent)', input: 'var(--input-background)' } } } }
+    </script>
+</head>
+<body class="bg-background text-foreground min-h-screen font-sans flex flex-col">
+
+    <header class="bg-primary text-primary-fg px-6 py-4 flex justify-between items-center shadow-md sticky top-0 z-50">
+        <div class="flex items-center gap-4">
+            <div class="w-8 h-8 bg-accent text-primary flex items-center justify-center font-bold rounded shadow-inner">D</div>
+            <h1 class="text-xl font-serif-custom tracking-wider font-semibold">DADA ENTERPRISE</h1>
+            <span class="border border-white/20 bg-white/10 text-white text-[10px] px-2 py-1 rounded-full ml-2 uppercase tracking-widest">Client Portal</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-sm opacity-80 hidden md:block">Welcome back</span>
+            <a href="/logout" class="text-sm font-medium hover:text-accent transition">🚪 Logout</a>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        
+        <div class="flex gap-2 border-b border-border mb-8">
+            <button onclick="switchTab('order')" id="tab-btn-order" class="px-6 py-3 border-b-2 border-primary font-bold text-primary transition">
+                🛒 Place Order
+            </button>
+            <button onclick="switchTab('history')" id="tab-btn-history" class="px-6 py-3 border-b-2 border-transparent text-muted-fg hover:text-foreground transition">
+                📦 Order History
+            </button>
+            <button onclick="switchTab('reports')" id="tab-btn-reports" class="px-6 py-3 border-b-2 border-transparent text-muted-fg hover:text-foreground transition">
+                📊 Reports
+            </button>
+        </div>
+
+        <div id="section-order" class="space-y-6">
+            <form action="/customer/place-order" method="POST" class="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm">
+                
+                <div class="mb-10">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold text-muted-fg uppercase tracking-widest">1. Select Delivery Branch</h3>
+                        <button type="button" onclick="document.getElementById('branchModal').classList.remove('hidden')" class="text-sm font-medium text-primary hover:text-accent transition flex items-center gap-1">
+                            + Add Branch
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <% if (branches && branches.length > 0) { %>
+                            <% branches.forEach((branch, index) => { %>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="branch_id" value="<%= branch.id %>" class="peer hidden" <%= index === 0 ? 'checked' : '' %> required>
+                                    <div class="px-5 py-2.5 rounded-full border border-border bg-background text-sm font-medium text-muted-fg peer-checked:bg-primary peer-checked:text-primary-fg peer-checked:border-primary transition shadow-sm hover:border-primary/50">
+                                        📍 <%= branch.branch_name %>
+                                    </div>
+                                </label>
+                            <% }) %>
+                        <% } else { %>
+                            <p class="text-sm text-red-500 italic">Please add a branch before placing an order.</p>
+                        <% } %>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-sm font-bold text-muted-fg uppercase tracking-widest mb-4">2. Enter Quantities</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <% if (products && products.length > 0) { %>
+                            <% products.forEach(product => { %>
+                                <% const finalPrice = Math.round(parseFloat(product.base_rate) * (1 + (parseFloat(product.gst_percentage) || 0) / 100)); %>
+                                
+                                <div class="bg-background border border-border rounded-xl p-5 shadow-sm hover:shadow-md transition group">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <div>
+                                            <h4 class="font-bold text-lg"><%= product.name %></h4>
+                                            <p class="text-xs text-muted-fg mt-1">₹<%= finalPrice %> / <%= product.unit %> (Incl. GST)</p>
+                                        </div>
+                                        <span class="text-2xl opacity-80 group-hover:scale-110 transition-transform">
+                                            <%= product.name.toUpperCase().includes('MILK') ? '🥛' : product.name.toUpperCase().includes('DAHI') ? '🧀' : '🧊' %>
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="mt-4 flex flex-col">
+                                        <div class="flex items-end gap-2 bg-input/50 rounded-lg p-2 border border-border focus-within:border-primary transition-colors">
+                                            <input 
+                                                type="number" 
+                                                name="products[<%= product.id %>]" 
+                                                step="0.01" 
+                                                min="0" 
+                                                placeholder="0.00"
+                                                class="w-full bg-transparent outline-none text-xl font-serif-custom"
+                                            >
+                                            <span class="text-xs font-bold text-muted-fg pb-1 uppercase tracking-wider"><%= product.unit %></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        <% } %>
+                    </div>
+                </div>
+
+                <div class="mt-10 flex justify-end pt-6 border-t border-border">
+                    <button type="submit" class="bg-primary/90 hover:bg-primary text-primary-fg px-8 py-3 rounded-lg font-medium text-lg transition shadow-lg flex items-center gap-2" <%= (!branches || branches.length === 0) ? 'disabled class="opacity-50 cursor-not-allowed"' : '' %>>
+                        🛒 Place Final Order
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div id="section-history" class="hidden">
+            <div class="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-primary text-primary-fg">
+                        <tr>
+                            <th class="p-4 font-medium tracking-wider">Order ID</th>
+                            <th class="p-4 font-medium tracking-wider">Branch</th>
+                            <th class="p-4 font-medium tracking-wider">Date</th>
+                            <th class="p-4 font-medium tracking-wider">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-border">
+                        <% if (orders && orders.length > 0) { %>
+                            <% orders.forEach(order => { %>
+                                <tr class="hover:bg-muted/20 transition">
+                                    <td class="p-4 font-mono font-bold">ORD-<%= String(order.id).padStart(4, '0') %></td>
+                                    <td class="p-4"><%= order.branch_name %></td>
+                                    <td class="p-4"><%= new Date(order.created_at).toLocaleDateString() %></td>
+                                    <td class="p-4">
+                                        <% if (order.status === 'Fulfilled') { %>
+                                            <span class="px-3 py-1 bg-green-100 text-green-800 border border-green-200 rounded-full text-xs font-bold">✔ Fulfilled</span>
+                                        <% } else { %>
+                                            <span class="px-3 py-1 bg-yellow-100 text-yellow-800 border border-yellow-200 rounded-full text-xs font-bold"><%= order.status %></span>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr><td colspan="4" class="p-8 text-center text-muted-fg">No orders found.</td></tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="section-reports" class="hidden">
+            <div class="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm max-w-2xl">
+                <h3 class="text-xl font-serif-custom font-bold text-foreground mb-2">Generate Order Data</h3>
+                <p class="text-sm text-muted-fg mb-8">Download your complete order history and itemized breakdowns for your internal accounting.</p>
+                
+                <form action="/customer/generate-report" method="GET" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-bold text-muted-fg mb-2 uppercase tracking-wider">Start Date</label>
+                            <input type="date" name="start_date" required class="w-full bg-input border border-border focus:border-primary rounded px-4 py-3 outline-none transition">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-muted-fg mb-2 uppercase tracking-wider">End Date</label>
+                            <input type="date" name="end_date" required class="w-full bg-input border border-border focus:border-primary rounded px-4 py-3 outline-none transition">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-muted-fg mb-2 uppercase tracking-wider">Filter by Branch (Optional)</label>
+                        <select name="branch_id" class="w-full bg-input border border-border focus:border-primary rounded px-4 py-3 outline-none transition appearance-none">
+                            <option value="ALL">All Branches</option>
+                            <% if (branches) { branches.forEach(branch => { %>
+                                <option value="<%= branch.id %>"><%= branch.branch_name %></option>
+                            <% }) } %>
+                        </select>
+                    </div>
+                    <div class="pt-4">
+                        <button type="submit" class="w-full bg-foreground hover:bg-black text-background font-medium py-3 rounded transition shadow flex justify-center items-center gap-2">
+                            ⬇️ Download Report
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="branchModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-card rounded-xl max-w-md w-full shadow-2xl overflow-hidden border border-border">
+            <div class="px-6 py-4 border-b border-border bg-muted/30 flex justify-between items-center">
+                <h3 class="font-bold text-foreground font-serif-custom tracking-wide">Register New Branch</h3>
+                <button type="button" onclick="document.getElementById('branchModal').classList.add('hidden')" class="text-muted-fg hover:text-foreground text-2xl leading-none">&times;</button>
+            </div>
+            <form action="/customer/add-branch" method="POST" class="p-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-muted-fg mb-1 uppercase tracking-wider">Branch Name</label>
+                        <input type="text" name="branch_name" required placeholder="e.g. Andheri West" class="w-full bg-input border border-border rounded px-3 py-2 outline-none focus:border-primary transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-muted-fg mb-1 uppercase tracking-wider">Address</label>
+                        <textarea name="address" rows="2" required class="w-full bg-input border border-border rounded px-3 py-2 outline-none focus:border-primary transition"></textarea>
+                    </div>
+                </div>
+                <div class="mt-8 flex gap-3">
+                    <button type="button" onclick="document.getElementById('branchModal').classList.add('hidden')" class="flex-1 px-4 py-2.5 border border-border text-foreground font-medium rounded hover:bg-muted transition">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-2.5 bg-primary text-primary-fg font-medium rounded hover:bg-primary/90 transition shadow">Save Branch</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 1. Tab Navigation
+        function switchTab(tabId) {
+            document.getElementById('section-order').classList.add('hidden');
+            document.getElementById('section-history').classList.add('hidden');
+            document.getElementById('section-reports').classList.add('hidden');
+            
+            ['order', 'history', 'reports'].forEach(id => {
+                const btn = document.getElementById('tab-btn-' + id);
+                btn.classList.remove('border-primary', 'text-primary', 'font-bold');
+                btn.classList.add('border-transparent', 'text-muted-fg');
+            });
+
+            document.getElementById('section-' + tabId).classList.remove('hidden');
+            
+            const activeBtn = document.getElementById('tab-btn-' + tabId);
+            activeBtn.classList.remove('border-transparent', 'text-muted-fg');
+            activeBtn.classList.add('border-primary', 'text-primary', 'font-bold');
+        }
+
+        // 2. Multi-Branch Draft Memory System
+        document.addEventListener('DOMContentLoaded', () => {
+            const branchRadios = document.querySelectorAll('input[name="branch_id"]');
+            const productInputs = document.querySelectorAll('input[name^="products["]');
+            
+            // This object will secretly hold the numbers for branches you aren't currently looking at
+            const drafts = {};
+            let currentBranchId = document.querySelector('input[name="branch_id"]:checked')?.value;
+
+            // Save what is currently typed into the secret memory
+            const saveCurrentDraft = () => {
+                if (!currentBranchId) return;
+                if (!drafts[currentBranchId]) drafts[currentBranchId] = {};
+                productInputs.forEach(input => {
+                    drafts[currentBranchId][input.name] = input.value;
+                });
+            };
+
+            // Load the numbers from memory back onto the screen
+            const loadDraft = (branchId) => {
+                if (drafts[branchId]) {
+                    productInputs.forEach(input => {
+                        input.value = drafts[branchId][input.name] || '';
+                    });
+                } else {
+                    productInputs.forEach(input => input.value = ''); // Blank slate for new branches
+                }
+            };
+
+            // Listen for when they click a different branch
+            branchRadios.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    saveCurrentDraft(); // Save the old branch
+                    currentBranchId = e.target.value; // Switch to the new branch
+                    loadDraft(currentBranchId); // Load the new branch's numbers
+                });
+            });
+
+            // Save continuously as they type, just to be safe
+            productInputs.forEach(input => {
+                input.addEventListener('input', saveCurrentDraft);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DADA Enterprise | Dashboard</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              background: 'var(--background)',
+              foreground: 'var(--foreground)',
+              primary: 'var(--primary)',
+              'primary-fg': 'var(--primary-foreground)',
+              muted: 'var(--muted)',
+              'muted-fg': 'var(--muted-foreground)',
+              border: 'var(--border)',
+              card: 'var(--card)'
+            }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="bg-background text-foreground min-h-screen">
+
+    <header class="bg-primary text-primary-fg px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-4">
+            <div class="w-8 h-8 bg-accent text-primary flex items-center justify-center font-bold rounded">D</div>
+            <h1 class="text-xl font-serif-custom tracking-wider font-semibold">DADA ENTERPRISE</h1>
+            <span class="border border-accent/50 text-accent text-xs px-2 py-1 rounded-full ml-2">🛡️ Admin</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <button class="opacity-80 hover:opacity-100 transition">🔔</button>
+            <div class="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full cursor-pointer">
+                <div class="w-6 h-6 bg-accent text-primary rounded-full flex items-center justify-center text-xs font-bold">A</div>
+                <span class="text-sm font-medium">Admin</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="bg-card border-b border-border px-8 py-4 flex gap-12 overflow-x-auto">
+        <div class="flex items-center gap-3">
+            <div class="p-2 bg-muted rounded"><span class="text-xl">👥</span></div>
+            <div>
+                <p class="text-xl font-bold leading-none"><%= stats.customers %></p>
+                <p class="text-xs text-muted-fg mt-1">Total Customers</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="p-2 bg-muted rounded"><span class="text-xl">🏢</span></div>
+            <div>
+                <p class="text-xl font-bold leading-none"><%= stats.branches %></p>
+                <p class="text-xs text-muted-fg mt-1">Active Branches</p>
+            </div>
+        </div>
+    </div>
+
+    <main class="p-8 max-w-7xl mx-auto">
+        
+        <div class="flex gap-2 border-b border-border mb-6">
+            <button onclick="switchTab('orders')" id="btn-orders" class="px-4 py-2 border-b-2 border-primary font-medium text-primary bg-white rounded-t-md transition">📦 All Orders</button>
+            <button onclick="switchTab('gst')" id="btn-gst" class="px-4 py-2 border-b-2 border-transparent text-muted-fg hover:text-foreground transition">📄 GST Invoice</button>
+            <button onclick="switchTab('reports')" id="btn-reports" class="px-4 py-2 border-b-2 border-transparent text-muted-fg hover:text-foreground transition">📊 Reports</button>
+        </div>
+
+        <div id="tab-orders" class="space-y-6">
+            <% if (Object.keys(groupedData).length === 0) { %>
+                <div class="p-8 text-center bg-card rounded-lg border border-border text-muted-fg">
+                    No active orders found in the database.
+                </div>
+            <% } else { %>
+                <% for (const [customerName, branches] of Object.entries(groupedData)) { %>
+                    <div class="bg-card rounded-lg border border-border overflow-hidden shadow-sm">
+                        <div class="bg-muted/30 px-6 py-4 border-b border-border">
+                            <h2 class="text-lg font-bold text-primary flex items-center gap-2">🏢 <%= customerName %></h2>
+                        </div>
+                        
+                        <div class="p-6 space-y-6">
+                            <% for (const [branchName, products] of Object.entries(branches)) { %>
+                                <div class="pl-4 border-l-2 border-accent">
+                                    <h3 class="font-semibold mb-3 flex items-center gap-2 text-sm text-muted-fg">📍 <%= branchName %></h3>
+                                    
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <% products.forEach(item => { %>
+                                            <div class="bg-background border border-border p-3 rounded flex justify-between items-center">
+                                                <span class="font-medium text-sm"><%= item.product %></span>
+                                                <span class="text-sm font-bold bg-muted px-2 py-1 rounded"><%= item.qty %> <%= item.unit %></span>
+                                            </div>
+                                        <% }) %>
+                                    </div>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+                <% } %>
+            <% } %>
+        </div>
+
+        <div id="tab-gst" class="hidden">
+            <div class="bg-card rounded-xl border border-border p-8 max-w-2xl">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="p-3 bg-muted rounded-lg text-xl">📄</div>
+                    <div>
+                        <h2 class="text-xl font-bold">Generate GST Invoice</h2>
+                        <p class="text-sm text-muted-fg">Select a date range to generate a GST-compliant invoice</p>
+                    </div>
+                </div>
+
+                <form class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">Select Customer</label>
+                        <select class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
+                            <option>Radhe Madhav Foods</option>
+                            <option>Test Client Ltd</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">From Date</label>
+                            <input type="date" class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">To Date</label>
+                            <input type="date" class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
+                        </div>
+                    </div>
+
+                    <div class="bg-muted/50 border border-border p-4 rounded-lg text-sm text-muted-fg space-y-2">
+                        <p class="font-semibold text-foreground mb-3">Invoice will include:</p>
+                        <p>• Product-wise itemization with HSN codes</p>
+                        <p>• GST @ 5% on all dairy & soy products</p>
+                        <p>• Consolidated quantities across all branches</p>
+                    </div>
+
+                    <button type="button" class="w-full bg-primary hover:bg-primary/90 text-primary-fg font-medium py-3 rounded transition flex justify-center items-center gap-2">
+                        📄 Preview GST Invoice
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div id="tab-reports" class="hidden">
+            <div class="bg-card rounded-xl border border-border p-8 max-w-2xl">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="p-3 bg-muted rounded-lg text-xl">📊</div>
+                    <div>
+                        <h2 class="text-xl font-bold">Generate Overall Report</h2>
+                        <p class="text-sm text-muted-fg">Dispatch breakdown by product and branch for a date range</p>
+                    </div>
+                </div>
+
+                <form class="space-y-6">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">From Date</label>
+                            <input type="date" class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">To Date</label>
+                            <input type="date" class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
+                        </div>
+                    </div>
+
+                    <div class="bg-muted/50 border border-border p-4 rounded-lg text-sm text-muted-fg space-y-2">
+                        <p class="font-semibold text-foreground mb-3">Report will include:</p>
+                        <p>• Total dispatch KPIs</p>
+                        <p>• Product-wise quantity breakdown</p>
+                        <p>• Branch-wise order volume ranking</p>
+                    </div>
+
+                    <button type="button" class="w-full bg-primary hover:bg-primary/90 text-primary-fg font-medium py-3 rounded transition flex justify-center items-center gap-2">
+                        📊 Generate Excel Report
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        function switchTab(tabId) {
+            // Hide all tabs
+            document.getElementById('tab-orders').classList.add('hidden');
+            document.getElementById('tab-gst').classList.add('hidden');
+            document.getElementById('tab-reports').classList.add('hidden');
+            
+            // Reset all buttons
+            ['orders', 'gst', 'reports'].forEach(id => {
+                const btn = document.getElementById('btn-' + id);
+                btn.classList.remove('border-primary', 'text-primary', 'bg-white');
+                btn.classList.add('border-transparent', 'text-muted-fg');
+            });
+
+            // Show active tab
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            
+            // Highlight active button
+            const activeBtn = document.getElementById('btn-' + tabId);
+            activeBtn.classList.remove('border-transparent', 'text-muted-fg');
+            activeBtn.classList.add('border-primary', 'text-primary', 'bg-white');
+        }
+    </script>
+</body>
+</html>

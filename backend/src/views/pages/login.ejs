@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DADA Enterprise | Login</title>
+    <link rel="stylesheet" href="/style.css">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              background: 'var(--background)',
+              foreground: 'var(--foreground)',
+              primary: 'var(--primary)',
+              'primary-fg': 'var(--primary-foreground)',
+              secondary: 'var(--secondary)',
+              muted: 'var(--muted)',
+              'muted-fg': 'var(--muted-foreground)',
+              accent: 'var(--accent)',
+              input: 'var(--input-background)',
+              border: 'var(--border)'
+            },
+            borderRadius: {
+              DEFAULT: 'var(--radius)'
+            }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="min-h-screen flex text-foreground">
+
+    <!-- LEFT PANEL (Branding) -->
+    <!-- FIX: Removed justify-between -->
+    <div class="hidden lg:flex w-[45%] bg-primary text-primary-fg p-12 flex-col relative overflow-hidden">
+        <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-white opacity-5 rounded-full blur-2xl"></div>
+        <div class="absolute top-20 -left-20 w-72 h-72 bg-black opacity-10 rounded-full blur-xl"></div>
+
+        <!-- Logo Section (Naturally sits at the top) -->
+        <div class="relative z-10">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-accent text-primary flex items-center justify-center font-bold text-xl rounded">D</div>
+                <div>
+                    <h2 class="text-xl font-serif-custom tracking-wider font-semibold">DADA ENTERPRISE</h2>
+                    <p class="text-sm opacity-60 font-mono tracking-widest uppercase mt-1">Order Management System</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hero Section (FIX: Added flex-1 flex flex-col justify-center to perfectly center it vertically) -->
+        <div class="relative z-10 max-w-md flex-1 flex flex-col justify-center">
+            <h1 class="text-5xl lg:text-6xl font-serif-custom leading-tight">
+                Fresh Dairy.<br>
+                <span class="text-accent">Smart Orders.</span>
+            </h1>
+            <p class="mt-6 text-lg opacity-80 leading-relaxed">
+                Manage Tofu, Curd, Milk & Buttermilk orders seamlessly — from dispatch to delivery, all in one place.
+            </p>
+
+            <div class="flex flex-wrap gap-3 mt-8">
+                <span class="px-4 py-2 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm text-sm flex items-center gap-2">🥛 Milk</span>
+                <span class="px-4 py-2 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm text-sm flex items-center gap-2">🧀 Curd</span>
+                <span class="px-4 py-2 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm text-sm flex items-center gap-2">🧊 Tofu</span>
+                <span class="px-4 py-2 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm text-sm flex items-center gap-2">🥤 Buttermilk</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL (Login Form) -->
+    <div class="w-full lg:w-[55%] bg-background flex flex-col justify-center items-center p-8 relative">
+        <div class="w-full max-w-md">
+            
+            <div class="bg-muted p-1 rounded-lg flex mb-12">
+                <button class="w-1/2 bg-primary text-primary-fg py-2.5 rounded shadow-sm text-sm font-medium">Sign In</button>
+                <button class="w-1/2 text-muted-fg py-2.5 rounded text-sm font-medium hover:text-foreground transition">Create Account</button>
+            </div>
+
+            <% if (error) { %>
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6" role="alert">
+                    <span class="block sm:inline"><%= error %></span>
+                </div>
+            <% } %>
+
+            <form action="/login" method="POST" class="space-y-6">
+                
+                <div>
+                    <label class="block text-sm font-medium mb-2">Email Address</label>
+                    <input 
+                        type="email" 
+                        name="email"
+                        required
+                        placeholder="orders@dadaenterprise.com" 
+                        class="w-full bg-input border border-transparent focus:border-accent focus:ring-1 focus:ring-accent rounded px-4 py-3 outline-none transition"
+                    >
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-sm font-medium">Password</label>
+                        <a href="#" class="text-xs text-accent hover:underline">Forgot password?</a>
+                    </div>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            name="password"
+                            required
+                            placeholder="Enter your password" 
+                            class="w-full bg-input border border-transparent focus:border-accent focus:ring-1 focus:ring-accent rounded px-4 py-3 outline-none transition pr-10"
+                        >
+                        <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-fg hover:text-foreground">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-input/70 border border-border p-3 rounded text-sm text-muted-fg flex items-start gap-2">
+                    <span>💡</span>
+                    <p>Use <strong>admin@dada.com</strong> / <strong>admin123</strong> to log in as Admin.</p>
+                </div>
+
+                <button type="submit" class="w-full bg-primary hover:bg-primary/90 text-primary-fg font-medium py-3 rounded transition flex justify-center items-center gap-2 shadow-lg">
+                    Sign In to Dashboard 
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+                </button>
+                
+                <button type="button" class="w-full bg-transparent border border-border hover:bg-secondary text-foreground font-medium py-3 rounded transition">
+                    New to DADA? Create an account
+                </button>
+
+            </form>
+            
+            <div class="mt-16 text-center text-xs text-muted-fg">
+                © 2026 DADA Enterprise · All rights reserved
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

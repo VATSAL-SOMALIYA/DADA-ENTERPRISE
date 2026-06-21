@@ -33,13 +33,10 @@
 </head>
 <body class="min-h-screen flex text-foreground">
 
-    <!-- LEFT PANEL (Branding) -->
-    <!-- FIX: Removed justify-between -->
     <div class="hidden lg:flex w-[45%] bg-primary text-primary-fg p-12 flex-col relative overflow-hidden">
         <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-white opacity-5 rounded-full blur-2xl"></div>
         <div class="absolute top-20 -left-20 w-72 h-72 bg-black opacity-10 rounded-full blur-xl"></div>
 
-        <!-- Logo Section (Naturally sits at the top) -->
         <div class="relative z-10">
             <div class="flex items-center gap-4">
                 <div class="w-10 h-10 bg-accent text-primary flex items-center justify-center font-bold text-xl rounded">D</div>
@@ -50,7 +47,6 @@
             </div>
         </div>
 
-        <!-- Hero Section (FIX: Added flex-1 flex flex-col justify-center to perfectly center it vertically) -->
         <div class="relative z-10 max-w-md flex-1 flex flex-col justify-center">
             <h1 class="text-5xl lg:text-6xl font-serif-custom leading-tight">
                 Fresh Dairy.<br>
@@ -69,7 +65,6 @@
         </div>
     </div>
 
-    <!-- RIGHT PANEL (Login Form) -->
     <div class="w-full lg:w-[55%] bg-background flex flex-col justify-center items-center p-8 relative">
         <div class="w-full max-w-md">
             
@@ -105,12 +100,13 @@
                     <div class="relative">
                         <input 
                             type="password" 
+                            id="password"
                             name="password"
                             required
                             placeholder="Enter your password" 
                             class="w-full bg-input border border-transparent focus:border-accent focus:ring-1 focus:ring-accent rounded px-4 py-3 outline-none transition pr-10"
                         >
-                        <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-fg hover:text-foreground">
+                        <button type="button" id="hover-eye" class="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-fg hover:text-foreground cursor-pointer">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                         </button>
                     </div>
@@ -138,5 +134,28 @@
         </div>
     </div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const passwordInput = document.getElementById('password');
+            const hoverEye = document.getElementById('hover-eye');
+
+            if (passwordInput && hoverEye) {
+                // Show password while mouse is hovering over the eye icon
+                hoverEye.addEventListener('mouseenter', () => {
+                    passwordInput.type = 'text';
+                });
+
+                // Hide password when mouse leaves the eye icon
+                hoverEye.addEventListener('mouseleave', () => {
+                    passwordInput.type = 'password';
+                });
+
+                // Fallback: Ensure it hides if someone clicks and drags off the icon
+                hoverEye.addEventListener('mouseup', () => {
+                    passwordInput.type = 'password';
+                });
+            }
+        });
+    </script>
 </body>
 </html>

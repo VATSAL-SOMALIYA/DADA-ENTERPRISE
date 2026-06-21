@@ -1,6 +1,6 @@
+require("dotenv").config();
 const express = require("express");
 const path = require("path");
-require("dotenv").config();
 const cookieParser = require("cookie-parser");
 
 // 1. Import your Route files (The Waiters)

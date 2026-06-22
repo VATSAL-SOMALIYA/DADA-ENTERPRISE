@@ -39,6 +39,7 @@
                 <div class="w-6 h-6 bg-accent text-primary rounded-full flex items-center justify-center text-xs font-bold">A</div>
                 <span class="text-sm font-medium">Admin</span>
             </div>
+            <a href="/logout" class="text-sm font-medium hover:text-accent transition ml-4 border-l border-white/30 pl-4">🚪 Logout</a>
         </div>
     </header>
 
@@ -62,7 +63,10 @@
     <main class="p-8 max-w-7xl mx-auto">
         
         <div class="flex gap-2 border-b border-border mb-6">
-            <button onclick="switchTab('orders')" id="btn-orders" class="px-4 py-2 border-b-2 border-primary font-medium text-primary bg-white rounded-t-md transition">📦 All Orders</button>
+            <button onclick="switchTab('orders')" id="btn-orders" class="px-4 py-2 border-b-2 border-primary font-medium text-primary bg-white rounded-t-md transition">📦 Demand Data</button>
+            
+            <button onclick="switchTab('fulfill')" id="btn-fulfill" class="px-4 py-2 border-b-2 border-transparent text-muted-fg hover:text-foreground transition">✏️ Manage Orders</button>
+            
             <button onclick="switchTab('gst')" id="btn-gst" class="px-4 py-2 border-b-2 border-transparent text-muted-fg hover:text-foreground transition">📄 GST Invoice</button>
             <button onclick="switchTab('reports')" id="btn-reports" class="px-4 py-2 border-b-2 border-transparent text-muted-fg hover:text-foreground transition">📊 Reports</button>
         </div>
@@ -98,6 +102,47 @@
                     </div>
                 <% } %>
             <% } %>
+        </div>
+
+        <div id="tab-fulfill" class="hidden space-y-6">
+            <div class="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-primary text-primary-fg">
+                        <tr>
+                            <th class="p-4 font-medium tracking-wider">Order ID</th>
+                            <th class="p-4 font-medium tracking-wider">Branch/Client</th>
+                            <th class="p-4 font-medium tracking-wider">Date</th>
+                            <th class="p-4 font-medium tracking-wider">Status</th>
+                            <th class="p-4 font-medium tracking-wider text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-border">
+                        <% if (typeof orders !== 'undefined' && orders && orders.length > 0) { %>
+                            <% orders.forEach(order => { %>
+                                <tr class="hover:bg-muted/20 transition">
+                                    <td class="p-4 font-mono font-bold">ORD-<%= String(order.id).padStart(4, '0') %></td>
+                                    <td class="p-4"><%= order.branch_names || "Master Order" %></td>
+                                    <td class="p-4"><%= new Date(order.created_at).toLocaleDateString() %></td>
+                                    <td class="p-4">
+                                        <% if (order.status === 'Fulfilled') { %>
+                                            <span class="px-3 py-1 bg-green-100 text-green-800 border border-green-200 rounded-full text-xs font-bold">✔ Fulfilled</span>
+                                        <% } else { %>
+                                            <span class="px-3 py-1 bg-yellow-100 text-yellow-800 border border-yellow-200 rounded-full text-xs font-bold"><%= order.status %></span>
+                                        <% } %>
+                                    </td>
+                                    <td class="p-4 text-right">
+                                        <button onclick="openFulfillModal('<%= order.id %>')" class="text-primary hover:text-accent font-medium text-sm border border-primary/20 hover:border-accent bg-primary/5 px-3 py-1.5 rounded transition">
+                                            ✏️ Respond
+                                        </button>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr><td colspan="5" class="p-8 text-center text-muted-fg border border-dashed m-4 rounded">No orders found. Please ensure 'orders' is passed from the admin controller.</td></tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <div id="tab-gst" class="hidden">
@@ -182,27 +227,109 @@
 
     </main>
 
+    <div id="fulfillModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-card rounded-xl max-w-3xl w-full shadow-2xl overflow-hidden border border-border flex flex-col max-h-[90vh]">
+            
+            <div class="px-6 py-4 border-b border-border bg-muted/30 flex justify-between items-center">
+                <div>
+                    <h3 class="font-bold text-foreground font-serif-custom tracking-wide text-lg">Order Fulfillment</h3>
+                    <p id="fulfill-order-id" class="text-sm font-mono text-muted-fg mt-1"></p>
+                </div>
+                <button type="button" onclick="document.getElementById('fulfillModal').classList.add('hidden')" class="text-muted-fg hover:text-foreground text-3xl leading-none">&times;</button>
+            </div>
+
+            <form id="fulfill-form" method="POST" class="flex flex-col overflow-hidden">
+                <div class="p-6 overflow-y-auto">
+                    <p class="text-sm text-muted-fg mb-4">Adjust the actual delivered quantities below. If an item was not delivered, set it to 0.</p>
+                    
+                    <table class="w-full text-left text-sm border border-border rounded-lg overflow-hidden">
+                        <thead class="bg-muted text-muted-fg">
+                            <tr>
+                                <th class="p-3 font-medium">Branch</th>
+                                <th class="p-3 font-medium">Product</th>
+                                <th class="p-3 font-medium">Requested Qty</th>
+                                <th class="p-3 font-medium text-right w-48">Actual Delivered Qty</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fulfill-items-tbody" class="divide-y divide-border">
+                            </tbody>
+                    </table>
+                </div>
+                <div class="px-6 py-4 border-t border-border bg-muted/10 flex justify-end gap-3">
+                    <button type="button" onclick="document.getElementById('fulfillModal').classList.add('hidden')" class="px-4 py-2 border border-border rounded text-foreground hover:bg-muted transition">Cancel</button>
+                    <button type="submit" class="px-6 py-2 bg-primary text-primary-fg rounded hover:bg-primary/90 transition shadow font-bold">💾 Mark as Delivered</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         function switchTab(tabId) {
-            // Hide all tabs
             document.getElementById('tab-orders').classList.add('hidden');
+            document.getElementById('tab-fulfill').classList.add('hidden'); 
             document.getElementById('tab-gst').classList.add('hidden');
             document.getElementById('tab-reports').classList.add('hidden');
             
-            // Reset all buttons
-            ['orders', 'gst', 'reports'].forEach(id => {
+            ['orders', 'fulfill', 'gst', 'reports'].forEach(id => {
                 const btn = document.getElementById('btn-' + id);
                 btn.classList.remove('border-primary', 'text-primary', 'bg-white');
                 btn.classList.add('border-transparent', 'text-muted-fg');
             });
 
-            // Show active tab
             document.getElementById('tab-' + tabId).classList.remove('hidden');
             
-            // Highlight active button
             const activeBtn = document.getElementById('btn-' + tabId);
             activeBtn.classList.remove('border-transparent', 'text-muted-fg');
             activeBtn.classList.add('border-primary', 'text-primary', 'bg-white');
+        }
+
+        async function openFulfillModal(orderId) {
+            try {
+                const response = await fetch(`/customer/order/${orderId}`);
+                if (!response.ok) throw new Error("Failed to fetch order details");
+                
+                const data = await response.json();
+                const order = data.order;
+                const items = data.items;
+
+                document.getElementById('fulfill-form').action = `/dashboard/fulfill/${order.id}`;
+                document.getElementById('fulfill-order-id').innerText = `ORD-${String(order.id).padStart(4, '0')} • ${new Date(order.created_at).toLocaleDateString()}`;
+
+                const tbody = document.getElementById('fulfill-items-tbody');
+                tbody.innerHTML = ''; 
+
+                items.forEach(item => {
+                    const defaultVal = item.delivered_quantity !== null && item.delivered_quantity !== undefined 
+                        ? item.delivered_quantity 
+                        : item.ordered_quantity;
+
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-muted/10 transition";
+                    tr.innerHTML = `
+                        <td class="p-3 font-bold text-xs text-primary uppercase">${item.branch_name}</td>
+                        <td class="p-3 font-medium">${item.product_name}</td>
+                        <td class="p-3 font-mono text-muted-fg">${item.ordered_quantity} ${item.unit}</td>
+                        <td class="p-3 text-right">
+                            <input 
+                                type="number" 
+                                step="0.001" 
+                                min="0"
+                                name="delivered_quantities[${item.id}]" 
+                                value="${defaultVal}"
+                                class="w-full bg-input border border-border rounded px-3 py-1.5 outline-none focus:border-primary text-right font-mono text-base"
+                                required
+                            >
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                document.getElementById('fulfillModal').classList.remove('hidden');
+
+            } catch (error) {
+                console.error("Error:", error);
+                alert("Could not load order details.");
+            }
         }
     </script>
 </body>

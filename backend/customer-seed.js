@@ -4,10 +4,10 @@ const bcrypt = require("bcrypt");
 async function createDummyCustomer() {
   console.log("Starting customer database seeding...");
 
-  const companyName = "Radhe Madhav Foods";
-  const gstin = "24AAACG1234H1Z5";
-  const email = "freshclient@dada.com";
-  const plainTextPassword = "client123";
+  const companyName = "Radhe Dhokla";
+  const gstin = "24AAACG1234H1Z7";
+  const email = "radhedhokla@dada.com";
+  const plainTextPassword = "radhe123";
 
   try {
     let customerId;

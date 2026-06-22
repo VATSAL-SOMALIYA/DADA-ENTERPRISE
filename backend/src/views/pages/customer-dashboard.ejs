@@ -115,7 +115,7 @@
                     <thead class="bg-primary text-primary-fg">
                         <tr>
                             <th class="p-4 font-medium tracking-wider">Order ID</th>
-                            <th class="p-4 font-medium tracking-wider">Branch</th>
+                            <th class="p-4 font-medium tracking-wider">Branches</th>
                             <th class="p-4 font-medium tracking-wider">Date</th>
                             <th class="p-4 font-medium tracking-wider">Status</th>
                             <th class="p-4 font-medium tracking-wider text-right">Action</th>
@@ -126,7 +126,7 @@
                             <% orders.forEach(order => { %>
                                 <tr class="hover:bg-muted/20 transition">
                                     <td class="p-4 font-mono font-bold">ORD-<%= String(order.id).padStart(4, '0') %></td>
-                                    <td class="p-4"><%= order.branch_name %></td>
+                                    <td class="p-4"><%= order.branch_names %></td>
                                     <td class="p-4"><%= new Date(order.created_at).toLocaleDateString() %></td>
                                     <td class="p-4">
                                         <% if (order.status === 'Fulfilled') { %>
@@ -212,11 +212,11 @@
     </div>
 
     <div id="invoiceModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-card rounded-xl max-w-2xl w-full shadow-2xl overflow-hidden border border-border flex flex-col max-h-[90vh]">
+        <div class="bg-card rounded-xl max-w-3xl w-full shadow-2xl overflow-hidden border border-border flex flex-col max-h-[90vh]">
             
             <div class="px-6 py-4 border-b border-border bg-muted/30 flex justify-between items-center">
                 <div>
-                    <h3 class="font-bold text-foreground font-serif-custom tracking-wide text-lg">Order Details</h3>
+                    <h3 class="font-bold text-foreground font-serif-custom tracking-wide text-lg">Master Purchase Order</h3>
                     <p id="modal-order-id" class="text-sm font-mono text-muted-fg mt-1"></p>
                 </div>
                 <button type="button" onclick="document.getElementById('invoiceModal').classList.add('hidden')" class="text-muted-fg hover:text-foreground text-3xl leading-none">&times;</button>
@@ -225,7 +225,7 @@
             <div class="p-6 overflow-y-auto">
                 <div class="flex justify-between mb-6 bg-background border border-border p-4 rounded-lg">
                     <div>
-                        <p class="text-xs text-muted-fg uppercase tracking-widest font-bold mb-1">Delivery Branch</p>
+                        <p class="text-xs text-muted-fg uppercase tracking-widest font-bold mb-1">Entity</p>
                         <p id="modal-branch-name" class="font-bold text-foreground"></p>
                         <p id="modal-branch-address" class="text-sm text-muted-fg mt-1"></p>
                     </div>
@@ -238,6 +238,7 @@
                 <table class="w-full text-left text-sm border border-border rounded-lg overflow-hidden">
                     <thead class="bg-muted text-muted-fg">
                         <tr>
+                            <th class="p-3 font-medium">Branch</th>
                             <th class="p-3 font-medium">Product</th>
                             <th class="p-3 font-medium text-center">Qty</th>
                             <th class="p-3 font-medium text-right">Base Rate</th>
@@ -276,7 +277,7 @@
             activeBtn.classList.add('border-primary', 'text-primary', 'font-bold');
         }
 
-        // Fetch and Display Order Details in Modal
+        // Fetch and Display Master Order Details (NOW WITH DELIVERED QUANTITY MATH)
         async function viewOrderDetails(orderId) {
             try {
                 const response = await fetch(`/customer/order/${orderId}`);
@@ -287,8 +288,8 @@
                 const items = data.items;
 
                 document.getElementById('modal-order-id').innerText = `ORD-${String(order.id).padStart(4, '0')} • ${new Date(order.created_at).toLocaleDateString()}`;
-                document.getElementById('modal-branch-name').innerText = order.branch_name;
-                document.getElementById('modal-branch-address').innerText = order.address;
+                document.getElementById('modal-branch-name').innerText = "Master Corporate Order";
+                document.getElementById('modal-branch-address').innerText = "Multiple Delivery Locations";
                 
                 const statusBadge = order.status === 'Fulfilled' 
                     ? `<span class="px-3 py-1 bg-green-100 text-green-800 border border-green-200 rounded-full text-xs font-bold">✔ Fulfilled</span>`
@@ -303,22 +304,35 @@
                     const basePrice = parseFloat(item.rate_at_order);
                     const gstPercent = parseFloat(item.gst_at_order) || 0;
                     const priceWithGst = basePrice * (1 + (gstPercent / 100));
-                    const rowTotal = priceWithGst * parseFloat(item.ordered_quantity);
+                    
+                    // NEW LOGIC: Check if admin has fulfilled and entered delivered quantity
+                    const isFulfilled = item.delivered_quantity !== null && item.delivered_quantity !== undefined;
+                    const activeQty = isFulfilled ? parseFloat(item.delivered_quantity) : parseFloat(item.ordered_quantity);
+                    const rowTotal = priceWithGst * activeQty;
                     
                     grandTotal += rowTotal;
 
+                    // If fulfilled, show the new green delivered quantity next to the old crossed-out requested quantity
+                    const qtyDisplay = isFulfilled 
+                        ? `<span class="text-green-600 font-bold">${activeQty}</span> <span class="text-[10px] text-muted-fg line-through ml-1">${item.ordered_quantity}</span>`
+                        : `${activeQty}`;
+
                     const tr = document.createElement('tr');
-                    tr.className = "hover:bg-muted/10 transition";
+                    tr.className = "hover:bg-muted/10 transition border-b border-border/50";
                     tr.innerHTML = `
+                        <td class="p-3 font-bold text-xs text-primary uppercase tracking-wider">${item.branch_name}</td>
                         <td class="p-3 font-medium">${item.product_name} <span class="text-xs text-muted-fg ml-1">(${item.unit})</span></td>
-                        <td class="p-3 text-center font-mono">${item.ordered_quantity}</td>
+                        <td class="p-3 text-center font-mono">${qtyDisplay}</td>
                         <td class="p-3 text-right text-muted-fg font-mono">₹${basePrice.toFixed(2)}</td>
-                        <td class="p-3 text-right font-bold font-mono">₹${rowTotal.toFixed(2)}</td>
+                        <td class="p-3 text-right font-bold font-mono text-foreground">₹${rowTotal.toFixed(2)}</td>
                     `;
                     tbody.appendChild(tr);
                 });
 
+                // Update the total label so the customer knows if it's Final or Estimated
+                document.getElementById('modal-grand-total').previousElementSibling.innerText = order.status === 'Fulfilled' ? "Final Invoice Total:" : "Estimated Total Amount:";
                 document.getElementById('modal-grand-total').innerText = `₹${Math.round(grandTotal).toLocaleString()}`;
+                
                 document.getElementById('invoiceModal').classList.remove('hidden');
 
             } catch (error) {

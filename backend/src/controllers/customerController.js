@@ -1,6 +1,41 @@
 const pool = require("../config/db");
 
-// 1. Add a New Branch (Unchanged)
+// 1. Load the Dashboard
+exports.getDashboard = async (req, res) => {
+    const userId = req.user.id;
+    const customerId = req.user.customer_id;
+
+    try {
+        // Fetch branches and products for the Matrix
+        const branchesResult = await pool.query("SELECT * FROM branches WHERE customer_id = $1", [customerId]);
+        const productsResult = await pool.query("SELECT * FROM products ORDER BY id");
+
+        // The NEW Master Order Query (uses STRING_AGG to combine branch names)
+        const ordersResult = await pool.query(`
+            SELECT o.id, o.created_at, o.status, 
+                   STRING_AGG(DISTINCT b.branch_name, ', ') as branch_names
+            FROM orders o
+            JOIN order_items oi ON o.id = oi.order_id
+            JOIN branches b ON oi.branch_id = b.id
+            WHERE o.user_id = $1
+            GROUP BY o.id, o.created_at, o.status
+            ORDER BY o.created_at DESC
+        `, [userId]);
+
+        res.render("pages/customer-dashboard", {
+            user: req.user,
+            branches: branchesResult.rows,
+            products: productsResult.rows,
+            orders: ordersResult.rows,
+            error: null
+        });
+    } catch (err) {
+        console.error("Dashboard Load Error:", err);
+        res.status(500).send("Server Error loading dashboard");
+    }
+};
+
+// 2. Add a New Branch
 exports.addBranch = async (req, res) => {
   const { branch_name, address } = req.body;
   const customerId = req.user.customer_id;
@@ -17,135 +52,120 @@ exports.addBranch = async (req, res) => {
   }
 };
 
-// 2. The NEW Bulk Place Order
-// 2. The NEW Resilient Bulk Place Order
+// 3. Bulk Place Order (Master Order System)
 exports.placeOrder = async (req, res) => {
-  console.log("\n--- [CHECKPOINT 1] Raw Form Data ---");
-  console.log(req.body);
-
-  let orders = req.body.orders;
+  const { orders } = req.body;
   const userId = req.user.id;
 
-  // 🛠️ AUTO-REPAIR: If browser sent the old format, fix it on the fly
-  if (!orders && req.body.products && req.body.branch_id) {
-    console.log("🔧 Auto-converting old form format to Matrix format...");
-    orders = {};
-    orders[req.body.branch_id] = req.body.products;
+  if (!orders || typeof orders !== 'object') {
+    return res.status(400).send("Invalid data.");
   }
 
-  // If there's truly no data, safely bounce them back (no crash)
-  if (!orders || Object.keys(orders).length === 0) {
-    console.log("⚠️ No valid order data found. Bouncing back to dashboard.");
-    return res.redirect("/dashboard");
-  }
-
-  console.log("--- [CHECKPOINT 2] Transaction Starting... ---");
-  let client;
+  const client = await pool.connect();
   
   try {
-    client = await pool.connect();
     await client.query("BEGIN"); 
 
+    // Fetch current product prices
     const prodDataResult = await client.query("SELECT id, base_rate, gst_percentage FROM products");
     const productPrices = {};
-    prodDataResult.rows.forEach(p => {
-      productPrices[p.id] = { rate: p.base_rate, gst: p.gst_percentage };
-    });
+    prodDataResult.rows.forEach(p => productPrices[p.id] = { rate: p.base_rate, gst: p.gst_percentage });
 
-    let totalBranchesOrdered = 0;
+    // 1. CREATE ONE SINGLE MASTER ORDER FOR THE ENTIRE SUBMISSION
+    const orderResult = await client.query(
+      "INSERT INTO orders (user_id, status) VALUES ($1, 'Pending') RETURNING id",
+      [userId]
+    );
+    const masterOrderId = orderResult.rows[0].id;
+    let itemsAdded = 0;
 
-    // Loop through the repaired data
-    // Loop through the prefixed data
+    // 2. LOOP THROUGH BRANCHES AND ADD ITEMS TO THE MASTER ORDER
     for (const [prefixedBranchId, products] of Object.entries(orders)) {
       if (!products) continue; 
       
-      // Remove the 'b_' to get the REAL database ID back
+      // Remove the 'b_' array trap fix
       const branchId = prefixedBranchId.replace('b_', '');
 
-      // Check if this branch has at least one item > 0
-      const hasValidItems = Object.entries(products).some(([id, qty]) => qty && parseFloat(qty) > 0);
-      
-      if (hasValidItems) {
-        console.log(`--- [CHECKPOINT 3] Saving REAL Branch ID: [${branchId}] ---`);
-        
-        const orderResult = await client.query(
-          "INSERT INTO orders (branch_id, user_id, status) VALUES ($1, $2, 'Pending') RETURNING id",
-          [branchId, userId]
-        );
-        const newOrderId = orderResult.rows[0].id;
-
-        for (const [productId, quantity] of Object.entries(products)) {
-          if (quantity && parseFloat(quantity) > 0) {
-            const prod = productPrices[productId];
-            if (prod) {
-              await client.query(
-                `INSERT INTO order_items 
-                (order_id, product_id, ordered_quantity, rate_at_order, gst_at_order) 
-                VALUES ($1, $2, $3, $4, $5)`,
-                [newOrderId, productId, parseFloat(quantity), prod.rate, prod.gst]
-              );
-            }
+      for (const [productId, quantity] of Object.entries(products)) {
+        if (quantity && parseFloat(quantity) > 0) {
+          const prod = productPrices[productId];
+          if (prod) {
+            // Notice we are now saving the branchId straight into the order_items table
+            await client.query(
+              `INSERT INTO order_items 
+              (order_id, branch_id, product_id, ordered_quantity, rate_at_order, gst_at_order) 
+              VALUES ($1, $2, $3, $4, $5, $6)`,
+              [masterOrderId, branchId, productId, parseFloat(quantity), prod.rate, prod.gst]
+            );
+            itemsAdded++;
           }
         }
-        totalBranchesOrdered++;
       }
     }
 
+    // 3. SAFETY NET: If they submitted a completely blank form, cancel the transaction
+    if (itemsAdded === 0) {
+        await client.query("ROLLBACK"); 
+        return res.redirect("/dashboard");
+    }
+
     await client.query("COMMIT"); 
-    console.log(`✅ Success! ${totalBranchesOrdered} branches saved.`);
-    return res.redirect("/dashboard");
+    res.redirect("/dashboard");
 
   } catch (err) {
-    console.error("\n❌ --- DATABASE ERROR --- ❌");
-    console.error(err.message);
-    
-    if (client) {
-        try { await client.query("ROLLBACK"); } 
-        catch (rollbackErr) { console.error("Rollback failed:", rollbackErr.message); }
-    }
-    
-    return res.status(500).send("Server Error placing bulk order: " + err.message);
-
+    if (client) await client.query("ROLLBACK");
+    console.error("Master Order Error:", err);
+    res.status(500).send("Server Error placing master order.");
   } finally {
-    if (client) {
-        client.release(); 
-    }
+    if (client) client.release(); 
   }
 };
-// 3. Fetch Specific Order Details (For the Modal)
+
+// 4. Get Order Details (For the Invoice Modal)
+// 4. Get Order Details (For the Invoice Modal & Admin Fulfillment)
 exports.getOrderDetails = async (req, res) => {
   const orderId = req.params.id;
   const userId = req.user.id;
+  
+  // In your system, if customer_id is null, this person is an Admin
+  const isCustomer = req.user.customer_id !== null; 
 
   try {
-    // 1. Fetch the main order envelope + branch name
-    const orderResult = await pool.query(`
-      SELECT o.id, o.status, o.created_at, b.branch_name, b.address 
-      FROM orders o
-      JOIN branches b ON o.branch_id = b.id
-      WHERE o.id = $1 AND o.user_id = $2
-    `, [orderId, userId]);
+    let orderResult;
 
+    if (isCustomer) {
+      // CUSTOMER PATH: Strict security lock. Must own the order.
+      orderResult = await pool.query(
+        `SELECT id, status, created_at FROM orders WHERE id = $1 AND user_id = $2`, 
+        [orderId, userId]
+      );
+    } else {
+      // ADMIN PATH: Master access. Can pull any order.
+      orderResult = await pool.query(
+        `SELECT id, status, created_at FROM orders WHERE id = $1`, 
+        [orderId]
+      );
+    }
+    
     if (orderResult.rows.length === 0) {
-      return res.status(404).json({ error: "Order not found or unauthorized." });
+      return res.status(404).json({ error: "Order not found." });
     }
 
-    // 2. Fetch all the itemized products inside this order
+    // Items now contain the branch info and the new delivered_quantity column
     const itemsResult = await pool.query(`
-      SELECT oi.ordered_quantity, oi.rate_at_order, oi.gst_at_order, p.name as product_name, p.unit
+      SELECT oi.id, oi.ordered_quantity, oi.delivered_quantity, oi.rate_at_order, oi.gst_at_order, 
+             p.name as product_name, p.unit, b.branch_name
       FROM order_items oi
       JOIN products p ON oi.product_id = p.id
+      JOIN branches b ON oi.branch_id = b.id
       WHERE oi.order_id = $1
+      ORDER BY b.branch_name, p.name
     `, [orderId]);
 
-    // Send it all back to the frontend as JSON
-    res.json({
-      order: orderResult.rows[0],
-      items: itemsResult.rows
-    });
-
+    res.json({ order: orderResult.rows[0], items: itemsResult.rows });
+    
   } catch (err) {
-    console.error("Fetch Order Details Error:", err);
-    res.status(500).json({ error: "Server Error fetching order details" });
+    console.error("Order Details Fetch Error:", err);
+    res.status(500).json({ error: "Server Error" });
   }
 };

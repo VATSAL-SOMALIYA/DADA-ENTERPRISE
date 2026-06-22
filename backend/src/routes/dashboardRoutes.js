@@ -1,9 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const dashboardController = require("../controllers/dashboardController");
-const { requireAuth } = require("../middleware/authMiddleware"); // Import the bouncer
+const { requireAuth } = require("../middleware/authMiddleware"); 
 
-// Put the bouncer in front of the controller
+// Load the dashboard
 router.get("/", requireAuth, dashboardController.renderDashboard);
+
+// The Fulfillment Route (This automatically becomes /dashboard/fulfill/:id)
+router.post("/fulfill/:id", requireAuth, dashboardController.fulfillOrder);
 
 module.exports = router;

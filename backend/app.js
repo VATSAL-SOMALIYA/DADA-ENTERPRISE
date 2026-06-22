@@ -24,7 +24,17 @@ app.use("/", authRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/customer", customerRoutes);
 
-
+// ==========================================
+// THE BULLETPROOF ADMIN ROUTE
+// Catches the exact URL the frontend is stubbornly sending
+// ==========================================
+const dashboardController = require("./src/controllers/dashboardController");
+const { requireAuth } = require("./src/middleware/authMiddleware");
+app.post(
+  "/admin/order/fulfill/:id",
+  requireAuth,
+  dashboardController.fulfillOrder,
+);
 
 // --- START SERVER ---
 const PORT = process.env.PORT || 5000;

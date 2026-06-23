@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DADA Enterprise | Dashboard</title>
     <link rel="stylesheet" href="/style.css">
+    
+    <style>
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+    </style>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -64,35 +76,33 @@
         
         <div class="flex gap-2 border-b border-border mb-6">
             <button onclick="switchTab('orders')" id="btn-orders" class="px-4 py-2 border-b-2 border-primary font-medium text-primary bg-white rounded-t-md transition">📦 Demand Data</button>
-            
-            <button onclick="switchTab('fulfill')" id="btn-fulfill" class="px-4 py-2 border-b-2 border-transparent text-muted-fg hover:text-foreground transition">✏️ Manage Orders</button>
-            
+            <button onclick="switchTab('manage')" id="btn-manage" class="px-4 py-2 border-b-2 border-transparent text-muted-fg hover:text-foreground transition">✏️ Manage Orders</button>
             <button onclick="switchTab('gst')" id="btn-gst" class="px-4 py-2 border-b-2 border-transparent text-muted-fg hover:text-foreground transition">📄 GST Invoice</button>
             <button onclick="switchTab('reports')" id="btn-reports" class="px-4 py-2 border-b-2 border-transparent text-muted-fg hover:text-foreground transition">📊 Reports</button>
         </div>
 
         <div id="tab-orders" class="space-y-6">
             <% if (Object.keys(groupedData).length === 0) { %>
-                <div class="p-8 text-center bg-card rounded-lg border border-border text-muted-fg">
-                    No active orders found in the database.
-                </div>
+                <div class="p-8 text-center bg-card rounded-lg border border-border text-muted-fg">No active requirements found for today.</div>
             <% } else { %>
+                <div class="bg-blue-50/50 border border-blue-100 text-blue-800 text-sm px-4 py-3 rounded-lg mb-4 flex items-center gap-2">
+                    <span>ℹ️</span> <strong>Note:</strong> All quantities below are displayed in their standard product units (e.g. KG, 500mL, etc.).
+                </div>
                 <% for (const [customerName, branches] of Object.entries(groupedData)) { %>
                     <div class="bg-card rounded-lg border border-border overflow-hidden shadow-sm">
                         <div class="bg-muted/30 px-6 py-4 border-b border-border">
                             <h2 class="text-lg font-bold text-primary flex items-center gap-2">🏢 <%= customerName %></h2>
                         </div>
-                        
                         <div class="p-6 space-y-6">
                             <% for (const [branchName, products] of Object.entries(branches)) { %>
                                 <div class="pl-4 border-l-2 border-accent">
                                     <h3 class="font-semibold mb-3 flex items-center gap-2 text-sm text-muted-fg">📍 <%= branchName %></h3>
-                                    
                                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                                         <% products.forEach(item => { %>
                                             <div class="bg-background border border-border p-3 rounded flex justify-between items-center">
                                                 <span class="font-medium text-sm"><%= item.product %></span>
-                                                <span class="text-sm font-bold bg-muted px-2 py-1 rounded"><%= item.qty %> <%= item.unit %></span>
+                                                <!-- Unit completely removed, just pure numbers -->
+                                                <span class="text-sm font-bold bg-muted px-3 py-1 rounded shadow-sm"><%= item.qty %></span>
                                             </div>
                                         <% }) %>
                                     </div>
@@ -104,7 +114,7 @@
             <% } %>
         </div>
 
-        <div id="tab-fulfill" class="hidden space-y-6">
+        <div id="tab-manage" class="hidden space-y-6">
             <div class="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
                 <table class="w-full text-left text-sm">
                     <thead class="bg-primary text-primary-fg">
@@ -121,7 +131,7 @@
                             <% orders.forEach(order => { %>
                                 <tr class="hover:bg-muted/20 transition">
                                     <td class="p-4 font-mono font-bold">ORD-<%= String(order.id).padStart(4, '0') %></td>
-                                    <td class="p-4"><%= order.branch_names || "Master Order" %></td>
+                                    <td class="p-4"><span class="font-bold text-primary"><%= order.company_name %></span><br><span class="text-xs text-muted-fg"><%= order.branch_names %></span></td>
                                     <td class="p-4"><%= new Date(order.created_at).toLocaleDateString() %></td>
                                     <td class="p-4">
                                         <% if (order.status === 'Fulfilled') { %>
@@ -131,14 +141,20 @@
                                         <% } %>
                                     </td>
                                     <td class="p-4 text-right">
-                                        <button onclick="openFulfillModal('<%= order.id %>')" class="text-primary hover:text-accent font-medium text-sm border border-primary/20 hover:border-accent bg-primary/5 px-3 py-1.5 rounded transition">
-                                            ✏️ Respond
-                                        </button>
+                                        <% if (order.status === 'Fulfilled') { %>
+                                            <button onclick="openFulfillModal('<%= order.id %>')" class="text-primary hover:text-accent font-medium text-sm border border-primary/20 hover:border-accent bg-primary/5 px-3 py-1.5 rounded transition">
+                                                ✏️ Edit
+                                            </button>
+                                        <% } else { %>
+                                            <button onclick="openFulfillModal('<%= order.id %>')" class="text-primary hover:text-accent font-medium text-sm border border-primary/20 hover:border-accent bg-primary/5 px-3 py-1.5 rounded transition">
+                                                ✏️ Respond
+                                            </button>
+                                        <% } %>
                                     </td>
                                 </tr>
                             <% }) %>
                         <% } else { %>
-                            <tr><td colspan="5" class="p-8 text-center text-muted-fg border border-dashed m-4 rounded">No orders found. Please ensure 'orders' is passed from the admin controller.</td></tr>
+                            <tr><td colspan="5" class="p-8 text-center text-muted-fg border border-dashed m-4 rounded">No orders found.</td></tr>
                         <% } %>
                     </tbody>
                 </table>
@@ -154,7 +170,6 @@
                         <p class="text-sm text-muted-fg">Select a date range to generate a GST-compliant invoice</p>
                     </div>
                 </div>
-
                 <form class="space-y-6">
                     <div>
                         <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">Select Customer</label>
@@ -163,7 +178,6 @@
                             <option>Test Client Ltd</option>
                         </select>
                     </div>
-
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">From Date</label>
@@ -174,14 +188,12 @@
                             <input type="date" class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
                         </div>
                     </div>
-
                     <div class="bg-muted/50 border border-border p-4 rounded-lg text-sm text-muted-fg space-y-2">
                         <p class="font-semibold text-foreground mb-3">Invoice will include:</p>
                         <p>• Product-wise itemization with HSN codes</p>
                         <p>• GST @ 5% on all dairy & soy products</p>
                         <p>• Consolidated quantities across all branches</p>
                     </div>
-
                     <button type="button" class="w-full bg-primary hover:bg-primary/90 text-primary-fg font-medium py-3 rounded transition flex justify-center items-center gap-2">
                         📄 Preview GST Invoice
                     </button>
@@ -198,7 +210,6 @@
                         <p class="text-sm text-muted-fg">Dispatch breakdown by product and branch for a date range</p>
                     </div>
                 </div>
-
                 <form class="space-y-6">
                     <div class="grid grid-cols-2 gap-6">
                         <div>
@@ -210,14 +221,12 @@
                             <input type="date" class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
                         </div>
                     </div>
-
                     <div class="bg-muted/50 border border-border p-4 rounded-lg text-sm text-muted-fg space-y-2">
                         <p class="font-semibold text-foreground mb-3">Report will include:</p>
                         <p>• Total dispatch KPIs</p>
                         <p>• Product-wise quantity breakdown</p>
                         <p>• Branch-wise order volume ranking</p>
                     </div>
-
                     <button type="button" class="w-full bg-primary hover:bg-primary/90 text-primary-fg font-medium py-3 rounded transition flex justify-center items-center gap-2">
                         📊 Generate Excel Report
                     </button>
@@ -229,7 +238,6 @@
 
     <div id="fulfillModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-card rounded-xl max-w-3xl w-full shadow-2xl overflow-hidden border border-border flex flex-col max-h-[90vh]">
-            
             <div class="px-6 py-4 border-b border-border bg-muted/30 flex justify-between items-center">
                 <div>
                     <h3 class="font-bold text-foreground font-serif-custom tracking-wide text-lg">Order Fulfillment</h3>
@@ -237,22 +245,23 @@
                 </div>
                 <button type="button" onclick="document.getElementById('fulfillModal').classList.add('hidden')" class="text-muted-fg hover:text-foreground text-3xl leading-none">&times;</button>
             </div>
-
             <form id="fulfill-form" method="POST" class="flex flex-col overflow-hidden">
                 <div class="p-6 overflow-y-auto">
-                    <p class="text-sm text-muted-fg mb-4">Adjust the actual delivered quantities below. If an item was not delivered, set it to 0.</p>
-                    
+                    <!-- Note added at the top, units removed from the table -->
+                    <p class="text-sm text-muted-fg mb-4">
+                        Adjust the actual delivered quantities below. If an item was not delivered, set it to 0.<br>
+                        <span class="text-xs text-primary font-medium">Note: All values represent standard product units.</span>
+                    </p>
                     <table class="w-full text-left text-sm border border-border rounded-lg overflow-hidden">
                         <thead class="bg-muted text-muted-fg">
                             <tr>
                                 <th class="p-3 font-medium">Branch</th>
                                 <th class="p-3 font-medium">Product</th>
-                                <th class="p-3 font-medium">Requested Qty</th>
+                                <th class="p-3 font-medium text-center">Requested Qty</th>
                                 <th class="p-3 font-medium text-right w-48">Actual Delivered Qty</th>
                             </tr>
                         </thead>
-                        <tbody id="fulfill-items-tbody" class="divide-y divide-border">
-                            </tbody>
+                        <tbody id="fulfill-items-tbody" class="divide-y divide-border"></tbody>
                     </table>
                 </div>
                 <div class="px-6 py-4 border-t border-border bg-muted/10 flex justify-end gap-3">
@@ -266,18 +275,17 @@
     <script>
         function switchTab(tabId) {
             document.getElementById('tab-orders').classList.add('hidden');
-            document.getElementById('tab-fulfill').classList.add('hidden'); 
+            document.getElementById('tab-manage').classList.add('hidden');
             document.getElementById('tab-gst').classList.add('hidden');
             document.getElementById('tab-reports').classList.add('hidden');
             
-            ['orders', 'fulfill', 'gst', 'reports'].forEach(id => {
+            ['orders', 'manage', 'gst', 'reports'].forEach(id => {
                 const btn = document.getElementById('btn-' + id);
                 btn.classList.remove('border-primary', 'text-primary', 'bg-white');
                 btn.classList.add('border-transparent', 'text-muted-fg');
             });
 
             document.getElementById('tab-' + tabId).classList.remove('hidden');
-            
             const activeBtn = document.getElementById('btn-' + tabId);
             activeBtn.classList.remove('border-transparent', 'text-muted-fg');
             activeBtn.classList.add('border-primary', 'text-primary', 'bg-white');
@@ -292,14 +300,14 @@
                 const order = data.order;
                 const items = data.items;
 
-                document.getElementById('fulfill-form').action = `/dashboard/fulfill/${order.id}`;
+                document.getElementById('fulfill-form').action = `/admin/order/fulfill/${order.id}`;
                 document.getElementById('fulfill-order-id').innerText = `ORD-${String(order.id).padStart(4, '0')} • ${new Date(order.created_at).toLocaleDateString()}`;
 
                 const tbody = document.getElementById('fulfill-items-tbody');
                 tbody.innerHTML = ''; 
 
                 items.forEach(item => {
-                    const defaultVal = item.delivered_quantity !== null && item.delivered_quantity !== undefined 
+                    const defaultVal = (item.delivered_quantity !== null && item.delivered_quantity !== undefined) 
                         ? item.delivered_quantity 
                         : item.ordered_quantity;
 
@@ -308,13 +316,12 @@
                     tr.innerHTML = `
                         <td class="p-3 font-bold text-xs text-primary uppercase">${item.branch_name}</td>
                         <td class="p-3 font-medium">${item.product_name}</td>
-                        <td class="p-3 font-mono text-muted-fg">${item.ordered_quantity} ${item.unit}</td>
+                        <!-- Stripped the unit entirely here -->
+                        <td class="p-3 font-mono text-muted-fg font-bold text-center">${item.ordered_quantity}</td>
                         <td class="p-3 text-right">
                             <input 
-                                type="number" 
-                                step="0.001" 
-                                min="0"
-                                name="delivered_quantities[${item.id}]" 
+                                type="number" step="0.001" min="0"
+                                name="delivered_quantities[${item.branch_id}_${item.product_id}]" 
                                 value="${defaultVal}"
                                 class="w-full bg-input border border-border rounded px-3 py-1.5 outline-none focus:border-primary text-right font-mono text-base"
                                 required
@@ -323,9 +330,7 @@
                     `;
                     tbody.appendChild(tr);
                 });
-
                 document.getElementById('fulfillModal').classList.remove('hidden');
-
             } catch (error) {
                 console.error("Error:", error);
                 alert("Could not load order details.");

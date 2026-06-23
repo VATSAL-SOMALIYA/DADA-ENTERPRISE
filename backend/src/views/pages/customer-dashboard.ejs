@@ -40,7 +40,6 @@
 
         <div id="section-order" class="space-y-6">
             <form action="/customer/place-order" method="POST" class="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm">
-                
                 <div class="flex justify-between items-center mb-6">
                     <div>
                         <h3 class="text-lg font-serif-custom font-bold text-foreground">Bulk Order Matrix</h3>
@@ -50,13 +49,12 @@
                         + Register New Branch
                     </button>
                 </div>
-
                 <% if (branches && branches.length > 0 && products && products.length > 0) { %>
                     <div class="overflow-x-auto border border-border rounded-lg bg-background">
                         <table class="w-full text-left text-sm whitespace-nowrap">
                             <thead class="bg-muted text-muted-fg uppercase tracking-wider text-xs border-b border-border">
                                 <tr>
-                                    <th class="p-4 font-bold sticky left-0 bg-muted border-r border-border z-10 w-48">Delivery Branch</th>
+                                    <th class="p-4 font-bold sticky left-0 bg-muted border-r border-border z-10 w-56">Delivery Branch</th>
                                     <% products.forEach(product => { %>
                                         <% const finalPrice = Math.round(parseFloat(product.base_rate) * (1 + (parseFloat(product.gst_percentage) || 0) / 100)); %>
                                         <th class="p-4 font-bold min-w-[140px]">
@@ -71,21 +69,22 @@
                             <tbody class="divide-y divide-border">
                                 <% branches.forEach(branch => { %>
                                     <tr class="hover:bg-muted/20 transition group">
-                                        <td class="p-4 font-bold sticky left-0 bg-background group-hover:bg-muted/50 border-r border-border z-10">
-                                            <%= branch.branch_name %>
+                                        <td class="p-4 sticky left-0 bg-background group-hover:bg-muted/50 border-r border-border z-10">
+                                            <div class="flex items-center justify-between">
+                                                <span class="font-bold"><%= branch.branch_name %></span>
+                                                <button type="button" onclick="deleteBranch('<%= branch.id || branch.branch_id %>', '<%= branch.branch_name %>')" title="Remove Branch" class="flex-shrink-0 ml-2 opacity-0 group-hover:opacity-100 text-muted-fg hover:text-red-500 hover:bg-red-50 transition p-1.5 rounded-md flex items-center justify-center">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M3 6h18"></path>
+                                                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
                                         </td>
-                                        
                                         <% products.forEach(product => { %>
                                             <td class="p-3">
                                                 <div class="flex items-end gap-1">
-                                                    <input 
-                                                        type="number" 
-                                                        name="orders[b_<%= branch.id || branch.branch_id %>][<%= product.id %>]" 
-                                                        step="0.01" 
-                                                        min="0" 
-                                                        placeholder="-"
-                                                        class="w-full bg-input border border-border focus:border-primary rounded px-3 py-2 outline-none transition font-mono text-base"
-                                                    >
+                                                    <input type="number" name="orders[b_<%= branch.id || branch.branch_id %>][<%= product.id %>]" step="0.01" min="0" placeholder="-" class="w-full bg-input border border-border focus:border-primary rounded px-3 py-2 outline-none transition font-mono text-base">
                                                 </div>
                                             </td>
                                         <% }) %>
@@ -94,13 +93,11 @@
                             </tbody>
                         </table>
                     </div>
-
                     <div class="mt-8 flex justify-end pt-6 border-t border-border">
                         <button type="submit" class="bg-primary hover:bg-primary/90 text-primary-fg px-8 py-3 rounded font-medium text-lg transition shadow-lg flex items-center gap-2">
                             🛒 Submit Bulk Order
                         </button>
                     </div>
-
                 <% } else { %>
                     <div class="text-center py-12 border-2 border-dashed border-border rounded-lg bg-muted/10">
                         <p class="text-muted-fg font-medium">Please add at least one branch to view the order matrix.</p>
@@ -136,9 +133,7 @@
                                         <% } %>
                                     </td>
                                     <td class="p-4 text-right">
-                                        <button onclick="viewOrderDetails('<%= order.id %>')" class="text-primary hover:text-accent font-medium text-sm border border-primary/20 hover:border-accent bg-primary/5 px-3 py-1.5 rounded transition">
-                                            👁️ View Items
-                                        </button>
+                                        <button onclick="viewOrderDetails('<%= order.id %>')" class="text-primary hover:text-accent font-medium text-sm border border-primary/20 hover:border-accent bg-primary/5 px-3 py-1.5 rounded transition">👁️ View Items</button>
                                     </td>
                                 </tr>
                             <% }) %>
@@ -154,7 +149,6 @@
             <div class="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm max-w-2xl">
                 <h3 class="text-xl font-serif-custom font-bold text-foreground mb-2">Generate Order Data</h3>
                 <p class="text-sm text-muted-fg mb-8">Download your complete order history and itemized breakdowns for your internal accounting.</p>
-                
                 <form action="/customer/generate-report" method="GET" class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
@@ -176,9 +170,7 @@
                         </select>
                     </div>
                     <div class="pt-4">
-                        <button type="submit" class="w-full bg-foreground hover:bg-black text-background font-medium py-3 rounded transition shadow flex justify-center items-center gap-2">
-                            ⬇️ Download Report
-                        </button>
+                        <button type="submit" class="w-full bg-foreground hover:bg-black text-background font-medium py-3 rounded transition shadow flex justify-center items-center gap-2">⬇️ Download Report</button>
                     </div>
                 </form>
             </div>
@@ -213,7 +205,6 @@
 
     <div id="invoiceModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-card rounded-xl max-w-3xl w-full shadow-2xl overflow-hidden border border-border flex flex-col max-h-[90vh]">
-            
             <div class="px-6 py-4 border-b border-border bg-muted/30 flex justify-between items-center">
                 <div>
                     <h3 class="font-bold text-foreground font-serif-custom tracking-wide text-lg">Master Purchase Order</h3>
@@ -221,7 +212,6 @@
                 </div>
                 <button type="button" onclick="document.getElementById('invoiceModal').classList.add('hidden')" class="text-muted-fg hover:text-foreground text-3xl leading-none">&times;</button>
             </div>
-
             <div class="p-6 overflow-y-auto">
                 <div class="flex justify-between mb-6 bg-background border border-border p-4 rounded-lg">
                     <div>
@@ -234,21 +224,18 @@
                         <div id="modal-status"></div>
                     </div>
                 </div>
-
                 <table class="w-full text-left text-sm border border-border rounded-lg overflow-hidden">
                     <thead class="bg-muted text-muted-fg">
                         <tr>
                             <th class="p-3 font-medium">Branch</th>
                             <th class="p-3 font-medium">Product</th>
-                            <th class="p-3 font-medium text-center">Qty</th>
+                            <th class="p-3 font-medium text-center" id="modal-qty-header">Qty</th>
                             <th class="p-3 font-medium text-right">Base Rate</th>
                             <th class="p-3 font-medium text-right">Total (Incl. GST)</th>
                         </tr>
                     </thead>
-                    <tbody id="modal-items-tbody" class="divide-y divide-border">
-                        </tbody>
+                    <tbody id="modal-items-tbody" class="divide-y divide-border"></tbody>
                 </table>
-                
                 <div class="mt-4 text-right pr-3">
                     <p class="text-muted-fg text-sm">Estimated Total Amount:</p>
                     <p id="modal-grand-total" class="text-2xl font-bold font-mono text-primary"></p>
@@ -258,26 +245,21 @@
     </div>
 
     <script>
-        // Tab Navigation
         function switchTab(tabId) {
             document.getElementById('section-order').classList.add('hidden');
             document.getElementById('section-history').classList.add('hidden');
             document.getElementById('section-reports').classList.add('hidden');
-            
             ['order', 'history', 'reports'].forEach(id => {
                 const btn = document.getElementById('tab-btn-' + id);
                 btn.classList.remove('border-primary', 'text-primary', 'font-bold');
                 btn.classList.add('border-transparent', 'text-muted-fg');
             });
-
             document.getElementById('section-' + tabId).classList.remove('hidden');
-            
             const activeBtn = document.getElementById('tab-btn-' + tabId);
             activeBtn.classList.remove('border-transparent', 'text-muted-fg');
             activeBtn.classList.add('border-primary', 'text-primary', 'font-bold');
         }
 
-        // Fetch and Display Master Order Details (NOW WITH DELIVERED QUANTITY MATH)
         async function viewOrderDetails(orderId) {
             try {
                 const response = await fetch(`/customer/order/${orderId}`);
@@ -291,10 +273,12 @@
                 document.getElementById('modal-branch-name').innerText = "Master Corporate Order";
                 document.getElementById('modal-branch-address').innerText = "Multiple Delivery Locations";
                 
-                const statusBadge = order.status === 'Fulfilled' 
+                const isOrderFulfilled = order.status === 'Fulfilled';
+                document.getElementById('modal-status').innerHTML = isOrderFulfilled 
                     ? `<span class="px-3 py-1 bg-green-100 text-green-800 border border-green-200 rounded-full text-xs font-bold">✔ Fulfilled</span>`
                     : `<span class="px-3 py-1 bg-yellow-100 text-yellow-800 border border-yellow-200 rounded-full text-xs font-bold">${order.status}</span>`;
-                document.getElementById('modal-status').innerHTML = statusBadge;
+
+                document.getElementById('modal-qty-header').innerText = isOrderFulfilled ? "Delivered Qty" : "Requested Qty";
 
                 const tbody = document.getElementById('modal-items-tbody');
                 tbody.innerHTML = ''; 
@@ -305,16 +289,15 @@
                     const gstPercent = parseFloat(item.gst_at_order) || 0;
                     const priceWithGst = basePrice * (1 + (gstPercent / 100));
                     
-                    // NEW LOGIC: Check if admin has fulfilled and entered delivered quantity
-                    const isFulfilled = item.delivered_quantity !== null && item.delivered_quantity !== undefined;
-                    const activeQty = isFulfilled ? parseFloat(item.delivered_quantity) : parseFloat(item.ordered_quantity);
-                    const rowTotal = priceWithGst * activeQty;
+                    const hasDeliveredQty = item.delivered_quantity !== null && item.delivered_quantity !== undefined;
                     
+                    const activeQty = (isOrderFulfilled && hasDeliveredQty) ? parseFloat(item.delivered_quantity) : parseFloat(item.ordered_quantity);
+                    
+                    const rowTotal = priceWithGst * activeQty;
                     grandTotal += rowTotal;
 
-                    // If fulfilled, show the new green delivered quantity next to the old crossed-out requested quantity
-                    const qtyDisplay = isFulfilled 
-                        ? `<span class="text-green-600 font-bold">${activeQty}</span> <span class="text-[10px] text-muted-fg line-through ml-1">${item.ordered_quantity}</span>`
+                    const qtyDisplay = isOrderFulfilled 
+                        ? `<span class="text-green-600 font-bold">${activeQty}</span>`
                         : `${activeQty}`;
 
                     const tr = document.createElement('tr');
@@ -329,15 +312,33 @@
                     tbody.appendChild(tr);
                 });
 
-                // Update the total label so the customer knows if it's Final or Estimated
-                document.getElementById('modal-grand-total').previousElementSibling.innerText = order.status === 'Fulfilled' ? "Final Invoice Total:" : "Estimated Total Amount:";
+                document.getElementById('modal-grand-total').previousElementSibling.innerText = isOrderFulfilled ? "Final Invoice Total:" : "Estimated Total Amount:";
                 document.getElementById('modal-grand-total').innerText = `₹${Math.round(grandTotal).toLocaleString()}`;
-                
                 document.getElementById('invoiceModal').classList.remove('hidden');
-
             } catch (error) {
                 console.error("Error:", error);
                 alert("Could not load order details.");
+            }
+        }
+
+        // NEW: Handles the invisible branch deletion cleanly
+        async function deleteBranch(branchId, branchName) {
+            if (confirm(`Are you sure you want to remove ${branchName}?`)) {
+                try {
+                    const response = await fetch(`/customer/delete-branch/${branchId}`, {
+                        method: 'POST'
+                    });
+                    
+                    if (response.ok) {
+                        window.location.reload(); 
+                    } else {
+                        const errorMessage = await response.text();
+                        alert(errorMessage || "Could not delete branch.");
+                    }
+                } catch (error) {
+                    console.error("Error:", error);
+                    alert("A network error occurred.");
+                }
             }
         }
     </script>

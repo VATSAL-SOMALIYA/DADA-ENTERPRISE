@@ -12,20 +12,13 @@
         theme: {
           extend: {
             colors: {
-              background: 'var(--background)',
-              foreground: 'var(--foreground)',
-              primary: 'var(--primary)',
-              'primary-fg': 'var(--primary-foreground)',
-              secondary: 'var(--secondary)',
-              muted: 'var(--muted)',
-              'muted-fg': 'var(--muted-foreground)',
-              accent: 'var(--accent)',
-              input: 'var(--input-background)',
-              border: 'var(--border)'
+              background: 'var(--background)', foreground: 'var(--foreground)',
+              primary: 'var(--primary)', 'primary-fg': 'var(--primary-foreground)',
+              secondary: 'var(--secondary)', muted: 'var(--muted)',
+              'muted-fg': 'var(--muted-foreground)', accent: 'var(--accent)',
+              input: 'var(--input-background)', border: 'var(--border)'
             },
-            borderRadius: {
-              DEFAULT: 'var(--radius)'
-            }
+            borderRadius: { DEFAULT: 'var(--radius)' }
           }
         }
       }
@@ -69,8 +62,8 @@
         <div class="w-full max-w-md">
             
             <div class="bg-muted p-1 rounded-lg flex mb-12">
-                <button class="w-1/2 bg-primary text-primary-fg py-2.5 rounded shadow-sm text-sm font-medium">Sign In</button>
-                <button class="w-1/2 text-muted-fg py-2.5 rounded text-sm font-medium hover:text-foreground transition">Create Account</button>
+                <button id="tab-signin" onclick="switchTab('signin')" class="w-1/2 bg-primary text-primary-fg py-2.5 rounded shadow-sm text-sm font-medium transition">Sign In</button>
+                <button id="tab-register" onclick="switchTab('register')" class="w-1/2 text-muted-fg py-2.5 rounded text-sm font-medium hover:text-foreground transition">Create Account</button>
             </div>
 
             <% if (error) { %>
@@ -79,83 +72,101 @@
                 </div>
             <% } %>
 
-            <form action="/login" method="POST" class="space-y-6">
-                
+            <!-- Sign In Form -->
+            <form id="form-signin" action="/login" method="POST" class="space-y-6">
                 <div>
                     <label class="block text-sm font-medium mb-2">Email Address</label>
-                    <input 
-                        type="email" 
-                        name="email"
-                        required
-                        placeholder="orders@dadaenterprise.com" 
-                        class="w-full bg-input border border-transparent focus:border-accent focus:ring-1 focus:ring-accent rounded px-4 py-3 outline-none transition"
-                    >
+                    <input type="email" name="email" required placeholder="orders@dadaenterprise.com" class="w-full bg-input border border-transparent focus:border-accent focus:ring-1 focus:ring-accent rounded px-4 py-3 outline-none transition">
                 </div>
-
                 <div>
                     <div class="flex justify-between items-center mb-2">
                         <label class="block text-sm font-medium">Password</label>
-                        <a href="#" class="text-xs text-accent hover:underline">Forgot password?</a>
+                        <a href="javascript:void(0)" onclick="toggleModal(true)" class="text-xs text-accent hover:underline">Forgot password?</a>
                     </div>
                     <div class="relative">
-                        <input 
-                            type="password" 
-                            id="password"
-                            name="password"
-                            required
-                            placeholder="Enter your password" 
-                            class="w-full bg-input border border-transparent focus:border-accent focus:ring-1 focus:ring-accent rounded px-4 py-3 outline-none transition pr-10"
-                        >
+                        <input type="password" id="password" name="password" required placeholder="Enter your password" class="w-full bg-input border border-transparent focus:border-accent focus:ring-1 focus:ring-accent rounded px-4 py-3 outline-none transition pr-10">
                         <button type="button" id="hover-eye" class="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-fg hover:text-foreground cursor-pointer">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                         </button>
                     </div>
                 </div>
-
                 <div class="bg-input/70 border border-border p-3 rounded text-sm text-muted-fg flex items-start gap-2">
-                    <span>💡</span>
-                    <p>Use <strong>admin@dada.com</strong> / <strong>admin123</strong> to log in as Admin.</p>
+                    <span>💡</span><p>Use <strong>admin@dada.com</strong> / <strong>admin123</strong> to log in as Admin.</p>
                 </div>
-
                 <button type="submit" class="w-full bg-primary hover:bg-primary/90 text-primary-fg font-medium py-3 rounded transition flex justify-center items-center gap-2 shadow-lg">
-                    Sign In to Dashboard 
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+                    Sign In to Dashboard <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
                 </button>
-                
-                <button type="button" class="w-full bg-transparent border border-border hover:bg-secondary text-foreground font-medium py-3 rounded transition">
-                    New to DADA? Create an account
-                </button>
+            </form>
 
+            <!-- Register Form (Hidden) -->
+            <form id="form-register" action="/register" method="POST" class="space-y-6 hidden">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Company Name</label>
+                    <input type="text" name="company_name" required placeholder="Enter Company Name" class="w-full bg-input border border-transparent focus:border-accent focus:ring-1 focus:ring-accent rounded px-4 py-3 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Email Address</label>
+                    <input type="email" name="email" required placeholder="email@dadaenterprise.com" class="w-full bg-input border border-transparent focus:border-accent focus:ring-1 focus:ring-accent rounded px-4 py-3 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Password</label>
+                    <input type="password" name="password" required placeholder="Create a password" class="w-full bg-input border border-transparent focus:border-accent focus:ring-1 focus:ring-accent rounded px-4 py-3 outline-none transition">
+                </div>
+                <button type="submit" class="w-full bg-primary hover:bg-primary/90 text-primary-fg font-medium py-3 rounded transition shadow-lg">Register Account</button>
             </form>
             
-            <div class="mt-16 text-center text-xs text-muted-fg">
-                © 2026 DADA Enterprise · All rights reserved
-            </div>
+            <div class="mt-16 text-center text-xs text-muted-fg">© 2026 DADA Enterprise · All rights reserved</div>
         </div>
     </div>
 
     <script>
+        function switchTab(type) {
+            const isReg = (type === 'register');
+            document.getElementById('form-signin').classList.toggle('hidden', isReg);
+            document.getElementById('form-register').classList.toggle('hidden', !isReg);
+            const btnS = document.getElementById('tab-signin');
+            const btnR = document.getElementById('tab-register');
+            btnS.className = isReg ? "w-1/2 text-muted-fg py-2.5 rounded text-sm font-medium transition" : "w-1/2 bg-primary text-primary-fg py-2.5 rounded shadow-sm text-sm font-medium transition";
+            btnR.className = isReg ? "w-1/2 bg-primary text-primary-fg py-2.5 rounded shadow-sm text-sm font-medium transition" : "w-1/2 text-muted-fg py-2.5 rounded text-sm font-medium transition";
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const passwordInput = document.getElementById('password');
             const hoverEye = document.getElementById('hover-eye');
-
             if (passwordInput && hoverEye) {
-                // Show password while mouse is hovering over the eye icon
-                hoverEye.addEventListener('mouseenter', () => {
-                    passwordInput.type = 'text';
-                });
-
-                // Hide password when mouse leaves the eye icon
-                hoverEye.addEventListener('mouseleave', () => {
-                    passwordInput.type = 'password';
-                });
-
-                // Fallback: Ensure it hides if someone clicks and drags off the icon
-                hoverEye.addEventListener('mouseup', () => {
-                    passwordInput.type = 'password';
-                });
+                hoverEye.addEventListener('mouseenter', () => passwordInput.type = 'text');
+                hoverEye.addEventListener('mouseleave', () => passwordInput.type = 'password');
+                hoverEye.addEventListener('mouseup', () => passwordInput.type = 'password');
             }
         });
+        function toggleModal(show) {
+    const modal = document.getElementById('forgotModal');
+    modal.classList.toggle('hidden', !show);
+}
     </script>
+    <div id="forgotModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-primary/90">
+    <div class="bg-background w-full max-w-sm rounded-xl shadow-2xl border border-border overflow-hidden">
+        <div class="p-6">
+            <h3 class="font-bold text-lg mb-2 text-foreground">Reset Password</h3>
+            <p class="text-sm text-muted-fg mb-5">Enter your email and we'll send you a recovery link to your terminal.</p>
+            
+            <form action="/forgot-password" method="POST">
+                <input type="email" name="email" required placeholder="orders@dadaenterprise.com" 
+                       class="w-full bg-input border border-border rounded px-4 py-3 mb-5 outline-none focus:border-primary">
+                
+                <div class="flex gap-3">
+                    <button type="button" onclick="toggleModal(false)" 
+                            class="flex-1 px-4 py-2 border border-border rounded text-sm font-medium text-foreground hover:bg-muted transition">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="flex-1 px-4 py-2 bg-primary text-primary-fg rounded text-sm font-bold shadow transition hover:bg-primary/90">
+                        Send Link
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 </body>
 </html>

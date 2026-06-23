@@ -4,13 +4,11 @@ exports.renderDashboard = async (req, res) => {
   try {
     const customerId = req.user.customer_id;
 
-    // ==========================================
-    // PATH 1: ADMIN DASHBOARD (customer_id is null)
-    // ==========================================
     if (!customerId) {
       const customerCount = await pool.query("SELECT COUNT(*) FROM customers");
       const branchCount = await pool.query("SELECT COUNT(*) FROM branches");
 
+      // FIXED: Demand Data now strictly filters for Today's date only
       const hierarchyQuery = await pool.query(`
         SELECT c.company_name, b.branch_name, p.name AS product_name, SUM(oi.ordered_quantity) AS total_qty, p.unit
         FROM customers c
@@ -18,6 +16,7 @@ exports.renderDashboard = async (req, res) => {
         JOIN order_items oi ON b.id = oi.branch_id
         JOIN orders o ON oi.order_id = o.id
         JOIN products p ON oi.product_id = p.id
+        WHERE CAST(o.created_at AS DATE) = CURRENT_DATE
         GROUP BY c.company_name, b.branch_name, p.name, p.unit
         ORDER BY c.company_name, b.branch_name
       `);
@@ -31,7 +30,6 @@ exports.renderDashboard = async (req, res) => {
         });
       });
 
-      // NEW: Fetch all orders across all clients for the Manage Orders tab
       const allOrdersQuery = await pool.query(`
         SELECT o.id, o.status, o.created_at, c.company_name, STRING_AGG(DISTINCT b.branch_name, ', ') as branch_names
         FROM orders o 
@@ -45,14 +43,10 @@ exports.renderDashboard = async (req, res) => {
       return res.render("pages/dashboard", { 
         stats: { customers: customerCount.rows[0].count, branches: branchCount.rows[0].count },
         groupedData: groupedData,
-        orders: allOrdersQuery.rows // Passing the orders to the Admin UI
+        orders: allOrdersQuery.rows
       });
     }
 
-    // ==========================================
-    // PATH 2: CUSTOMER DASHBOARD (customer_id exists)
-    // ==========================================
-    
     const branchesQuery = await pool.query("SELECT * FROM branches WHERE customer_id = $1", [customerId]);
     const productsQuery = await pool.query("SELECT * FROM products ORDER BY id");
     
@@ -66,18 +60,14 @@ exports.renderDashboard = async (req, res) => {
       ORDER BY o.created_at DESC
     `, [customerId]);
 
-    const branches = branchesQuery.rows;
-    const products = productsQuery.rows;
-    const orders = ordersQuery.rows;
-
     const stats = {
-      totalOrders: orders.length,
-      inProgress: orders.filter(o => o.status === 'Pending' || o.status === 'Dispatched').length,
-      delivered: orders.filter(o => o.status === 'Fulfilled').length,
-      branches: branches.length
+      totalOrders: ordersQuery.rows.length,
+      inProgress: ordersQuery.rows.filter(o => o.status === 'Pending' || o.status === 'Dispatched').length,
+      delivered: ordersQuery.rows.filter(o => o.status === 'Fulfilled').length,
+      branches: branchesQuery.rows.length
     };
 
-    return res.render("pages/customer-dashboard", { stats, branches, products, orders });
+    return res.render("pages/customer-dashboard", { stats, branches: branchesQuery.rows, products: productsQuery.rows, orders: ordersQuery.rows });
 
   } catch (err) {
     console.error("Dashboard Error:", err);
@@ -85,39 +75,31 @@ exports.renderDashboard = async (req, res) => {
   }
 };
 
-// Admin Submits Final Delivered Quantities
 exports.fulfillOrder = async (req, res) => {
     const orderId = req.params.id;
     const { delivered_quantities } = req.body; 
 
-    if (!delivered_quantities) {
-        return res.status(400).send("No fulfillment data provided.");
-    }
+    if (!delivered_quantities) return res.status(400).send("No fulfillment data provided.");
 
     const client = await pool.connect();
-    
     try {
         await client.query("BEGIN");
+        
+        // FIXED: Uses branch_id and product_id to guarantee the exact row updates
+        for (const [compositeKey, qty] of Object.entries(delivered_quantities)) {
+            if (qty !== "" && qty !== null) {
+                const [branchId, productId] = compositeKey.split('_');
 
-        // 1. Loop through every item and update its delivered quantity
-        for (const [itemId, qty] of Object.entries(delivered_quantities)) {
-            if (qty !== "") {
                 await client.query(
-                    "UPDATE order_items SET delivered_quantity = $1 WHERE id = $2 AND order_id = $3",
-                    [parseFloat(qty), itemId, orderId]
+                    "UPDATE order_items SET delivered_quantity = $1 WHERE order_id = $2 AND branch_id = $3 AND product_id = $4",
+                    [parseFloat(qty), orderId, branchId, productId]
                 );
             }
         }
 
-        // 2. Mark the Master Order as Fulfilled
-        await client.query(
-            "UPDATE orders SET status = 'Fulfilled' WHERE id = $1",
-            [orderId]
-        );
-
+        await client.query("UPDATE orders SET status = 'Fulfilled' WHERE id = $1", [orderId]);
         await client.query("COMMIT");
-        res.redirect("/dashboard"); // Redirects Admin back to dashboard after saving
-
+        res.redirect("/dashboard"); 
     } catch (err) {
         await client.query("ROLLBACK");
         console.error("Fulfillment Error:", err);

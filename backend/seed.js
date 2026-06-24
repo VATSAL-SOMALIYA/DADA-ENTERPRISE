@@ -5,8 +5,8 @@ const bcrypt = require("bcrypt");
 async function createAdmin() {
   console.log("Starting database seeding...");
 
-  const email = "admin@dada.com";
-  const plainTextPassword = "admin123";
+  const email = "dada@admin.com";
+  const plainTextPassword = "radh123";
 
   try {
     // 1. Check if the admin already exists so we don't create duplicates

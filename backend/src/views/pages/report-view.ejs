@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DADA Enterprise | Report</title>
+    <style>
+        body { font-family: Calibri, sans-serif; background: #fff; padding: 20px; }
+        .header-bar { display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center;}
+        .btn { padding: 8px 16px; background: #1A2E26; color: white; border: none; cursor: pointer; border-radius: 4px; font-weight: bold;}
+        table { border-collapse: collapse; width: 100%; font-size: 14px; text-align: right; }
+        th, td { border: 1px solid #000; padding: 4px 8px; white-space: nowrap; }
+        th { background-color: #E6B8B7; font-weight: bold; text-align: center; }
+        .date-col { background-color: #FDE9D9; }
+        .total-col { background-color: #E6B8B7; }
+        .row-label { text-align: left; font-weight: bold; background-color: #D8E4BC; }
+        tbody tr:nth-child(even) { background-color: #F2F2F2; }
+        tfoot { font-weight: bold; background-color: #92D050; }
+        tfoot td { color: #000; }
+        @media print { .btn { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <h2><%= reportType === 'tofu' ? 'BRANCH WISE WEEKLY HARD PANEER CONSUMPTION' : 'BRANCH WISE WEEKLY DAIRY PRODUCT CONSUMPTION DADA ENTERPRISE' %></h2>
+        <button class="btn" onclick="window.print()">Print / Save PDF</button>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th rowspan="2" class="row-label">DATE</th>
+                <th colspan="<%= dates.length %>"><%= reportType === 'tofu' ? 'BRANCH WISE WEEKLY HARD PANEER CONSUMPTION' : 'BRANCH WISE WEEKLY DAIRY PRODUCT CONSUMPTION DADA ENTERPRISE' %></th>
+                <th rowspan="2" class="total-col">TOTAL</th>
+                <th rowspan="2" class="total-col">PRICE</th>
+                <th rowspan="2" class="total-col">AMOUNT</th>
+            </tr>
+            <tr>
+                <% dates.forEach(date => { %>
+                    <th class="date-col"><%= new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' }).replace(/\//g, '-') %></th>
+                <% }) %>
+            </tr>
+        </thead>
+        <tbody>
+            <% rows.forEach(row => { %>
+                <tr>
+                    <td class="row-label"><%= row.label %></td>
+                    <% dates.forEach(date => { %>
+                        <td><%= row.dailyQtys[date] > 0 ? row.dailyQtys[date] : '' %></td>
+                    <% }) %>
+                    <td class="total-col"><%= row.totalQty %></td>
+                    <td><%= row.price %></td>
+                    <td><%= row.totalAmount %></td>
+                </tr>
+            <% }) %>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td style="text-align: center;" class="row-label">TOTAL</td>
+                <% dates.forEach(date => { %>
+                    <td><%= totals[date] %></td>
+                <% }) %>
+                <td class="total-col"><%= totals.overallQty %></td>
+                <td></td>
+                <td><%= totals.overallAmount %></td>
+            </tr>
+        </tfoot>
+    </table>
+</body>
+</html>

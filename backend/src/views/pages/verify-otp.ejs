@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify OTP | DADA Enterprise</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              background: 'var(--background)', foreground: 'var(--foreground)',
+              primary: 'var(--primary)', 'primary-fg': 'var(--primary-foreground)',
+              secondary: 'var(--secondary)', muted: 'var(--muted)',
+              'muted-fg': 'var(--muted-foreground)', accent: 'var(--accent)',
+              input: 'var(--input-background)', border: 'var(--border)'
+            },
+            borderRadius: { DEFAULT: 'var(--radius)' }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="min-h-screen flex text-foreground bg-background justify-center items-center p-4">
+    
+    <div class="w-full max-w-md bg-muted/30 border border-border p-8 rounded-xl shadow-2xl relative overflow-hidden">
+        <div class="absolute -bottom-32 -right-32 w-64 h-64 bg-accent opacity-5 rounded-full blur-2xl"></div>
+        <div class="absolute -top-20 -left-20 w-48 h-48 bg-primary opacity-5 rounded-full blur-xl"></div>
+
+        <div class="relative z-10">
+            <div class="flex items-center gap-3 mb-8 justify-center">
+                <div class="w-8 h-8 bg-accent text-primary flex items-center justify-center font-bold text-lg rounded">D</div>
+                <h2 class="text-lg font-serif-custom tracking-wider font-semibold">DADA ENTERPRISE</h2>
+            </div>
+
+            <div class="text-center mb-6">
+                <h1 class="text-2xl font-bold tracking-tight mb-2">Verify OTP</h1>
+                <p class="text-sm text-muted-fg">
+                    We sent a 6-digit verification code to <span class="font-semibold text-foreground"><%= email %></span>
+                </p>
+                <p class="text-xs text-muted-fg mt-1">
+                    Please check your email inbox (or terminal log in development).
+                </p>
+            </div>
+
+            <% if (error) { %>
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6 text-sm" role="alert">
+                    <span><%= error %></span>
+                </div>
+            <% } %>
+
+            <form action="/verify-otp" method="POST" class="space-y-6">
+                <input type="hidden" name="email" value="<%= email %>">
+                <input type="hidden" name="type" value="<%= type %>">
+
+                <div>
+                    <label class="block text-sm font-medium mb-2 text-center uppercase tracking-wider text-xs text-muted-fg">Enter 6-Digit Code</label>
+                    <input type="text" name="otp" required maxlength="6" pattern="\d{6}" placeholder="123456" 
+                           class="w-full text-center text-2xl font-mono tracking-[0.5em] pl-[0.25em] bg-input border border-border focus:border-accent focus:ring-1 focus:ring-accent rounded px-4 py-3 outline-none transition text-foreground">
+                </div>
+
+                <button type="submit" class="w-full bg-primary hover:bg-primary/90 text-primary-fg font-medium py-3 rounded transition flex justify-center items-center gap-2 shadow-lg">
+                    Confirm Code <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                </button>
+            </form>
+
+            <div class="mt-8 text-center text-xs text-muted-fg">
+                <a href="/" class="text-accent hover:underline flex justify-center items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg> Back to Sign In
+                </a>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

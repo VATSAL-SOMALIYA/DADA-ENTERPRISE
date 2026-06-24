@@ -131,6 +131,9 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            <% if (typeof activeTab !== 'undefined' && activeTab === 'register') { %>
+                switchTab('register');
+            <% } %>
             const passwordInput = document.getElementById('password');
             const hoverEye = document.getElementById('hover-eye');
             if (passwordInput && hoverEye) {

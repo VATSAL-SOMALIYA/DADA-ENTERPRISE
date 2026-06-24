@@ -149,25 +149,34 @@
             <div class="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm max-w-2xl">
                 <h3 class="text-xl font-serif-custom font-bold text-foreground mb-2">Generate Order Data</h3>
                 <p class="text-sm text-muted-fg mb-8">Download your complete order history and itemized breakdowns for your internal accounting.</p>
-                <form action="/customer/generate-report" method="GET" class="space-y-6">
+                <form action="/dashboard/reports/generate" method="GET" target="_blank" class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-bold text-muted-fg mb-2 uppercase tracking-wider">Start Date</label>
-                            <input type="date" name="start_date" required class="w-full bg-input border border-border focus:border-primary rounded px-4 py-3 outline-none transition">
+                            <input type="date" name="startDate" required class="w-full bg-input border border-border focus:border-primary rounded px-4 py-3 outline-none transition">
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-muted-fg mb-2 uppercase tracking-wider">End Date</label>
-                            <input type="date" name="end_date" required class="w-full bg-input border border-border focus:border-primary rounded px-4 py-3 outline-none transition">
+                            <input type="date" name="endDate" required class="w-full bg-input border border-border focus:border-primary rounded px-4 py-3 outline-none transition">
                         </div>
                     </div>
-                    <div>
-                        <label class="block text-sm font-bold text-muted-fg mb-2 uppercase tracking-wider">Filter by Branch (Optional)</label>
-                        <select name="branch_id" class="w-full bg-input border border-border focus:border-primary rounded px-4 py-3 outline-none transition appearance-none">
-                            <option value="ALL">All Branches</option>
-                            <% if (branches) { branches.forEach(branch => { %>
-                                <option value="<%= branch.id %>"><%= branch.branch_name %></option>
-                            <% }) } %>
-                        </select>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-bold text-muted-fg mb-2 uppercase tracking-wider">Filter by Branch (Optional)</label>
+                            <select name="branchId" class="w-full bg-input border border-border focus:border-primary rounded px-4 py-3 outline-none transition appearance-none">
+                                <option value="ALL">All Branches</option>
+                                <% if (branches) { branches.forEach(branch => { %>
+                                    <option value="<%= branch.id %>"><%= branch.branch_name %></option>
+                                <% }) } %>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-muted-fg mb-2 uppercase tracking-wider">Report Type</label>
+                            <select name="reportType" required class="w-full bg-input border border-border focus:border-primary rounded px-4 py-3 outline-none transition appearance-none">
+                                <option value="tofu">Tofu (Hard Paneer)</option>
+                                <option value="dairy">Dairy Products</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="pt-4">
                         <button type="submit" class="w-full bg-foreground hover:bg-black text-background font-medium py-3 rounded transition shadow flex justify-center items-center gap-2">⬇️ Download Report</button>

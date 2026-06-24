@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tax Invoice | DADA ENTERPRISE</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+            background-color: #ffffff;
+            color: #000000;
+            margin: 0;
+            padding: 20px;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        
+        .print-btn-container {
+            max-width: 800px;
+            margin: 0 auto 15px auto;
+            text-align: right;
+        }
+
+        .btn {
+            background-color: #1A2E26;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .invoice-box {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1px solid #000000;
+            padding: 0;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+
+        /* Header styling */
+        .invoice-header {
+            text-align: center;
+            border-bottom: 1px solid #000000;
+            padding: 12px;
+        }
+
+        .invoice-header h1 {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0 0 5px 0;
+            letter-spacing: 2px;
+        }
+
+        .company-name {
+            font-size: 20px;
+            font-weight: 900;
+            margin: 0 0 5px 0;
+            letter-spacing: 1.5px;
+        }
+
+        .company-details {
+            font-size: 12px;
+            margin: 2px 0;
+        }
+
+        .company-gstin {
+            font-size: 13px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        /* Buyer & Metadata section */
+        .info-section {
+            display: flex;
+            border-bottom: 1px solid #000000;
+        }
+
+        .buyer-details {
+            flex: 1.2;
+            border-right: 1px solid #000000;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .metadata-details {
+            flex: 0.8;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .info-row {
+            margin: 4px 0;
+            display: flex;
+        }
+
+        .info-label {
+            font-weight: bold;
+            width: 90px;
+            flex-shrink: 0;
+        }
+
+        .info-val {
+            flex-grow: 1;
+        }
+
+        /* Items table styling */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .items-table th, .items-table td {
+            border-bottom: 1px solid #000000;
+            border-right: 1px solid #000000;
+            padding: 6px 8px;
+        }
+
+        .items-table th:last-child, .items-table td:last-child {
+            border-right: none;
+        }
+
+        .items-table th {
+            font-weight: bold;
+            text-align: center;
+            background-color: #f5f5f5;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+
+        /* Subtotal row */
+        .subtotal-row {
+            font-weight: bold;
+            background-color: #f9f9f9;
+        }
+
+        /* Footer section */
+        .invoice-footer {
+            display: flex;
+            min-height: 200px;
+        }
+
+        .footer-left {
+            flex: 1.2;
+            border-right: 1px solid #000000;
+            padding: 10px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .footer-right {
+            flex: 0.8;
+            padding: 10px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* Bank details block */
+        .bank-details {
+            border: 1px dashed #000000;
+            padding: 8px;
+            font-size: 11px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+        }
+
+        .bank-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .terms-block {
+            font-size: 11px;
+            font-style: italic;
+            margin-bottom: 12px;
+        }
+
+        /* GST Split table */
+        .gst-split-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10.5px;
+            margin-bottom: 10px;
+        }
+
+        .gst-split-table th, .gst-split-table td {
+            border: 1px solid #000000;
+            padding: 4px 6px;
+            text-align: right;
+        }
+
+        .gst-split-table th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* Totals styling */
+        .totals-block {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 13px;
+        }
+
+        .grand-total {
+            font-size: 15px;
+            font-weight: bold;
+            border-top: 1px solid #000000;
+            border-bottom: 1px solid #000000;
+            padding: 6px 0;
+            margin-top: 5px;
+        }
+
+        .words-block {
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        /* Signatures */
+        .signature-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: auto;
+            padding-top: 20px;
+        }
+
+        .sig-box {
+            text-align: center;
+            width: 45%;
+        }
+
+        .sig-line {
+            border-top: 1px solid #000000;
+            margin-top: 45px;
+            padding-top: 4px;
+            font-weight: bold;
+        }
+
+        @media print {
+            body {
+                padding: 0;
+                background-color: #ffffff;
+            }
+            .print-btn-container {
+                display: none;
+            }
+            .invoice-box {
+                border: 1px solid #000000;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="print-btn-container">
+        <button class="btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+    </div>
+
+    <div class="invoice-box">
+        <!-- Header -->
+        <div class="invoice-header">
+            <h1>TAX INVOICE</h1>
+            <div class="company-name">DADA ENTERPRISE</div>
+            <div class="company-details">GROUND FLOOR SHOP A/13 TAPI DARSHAN RAW HOUSE-1 SINGANPORE CAUSEWAY ROAD</div>
+            <div class="company-details">Surat - 395004</div>
+            <div class="company-details">Mobile No.: 7202984611 &nbsp;|&nbsp; E-mail: dadaenterprise1808@gmail.com</div>
+            <div class="company-gstin">GSTIN No.: <%= sellerGstin %> &nbsp;|&nbsp; State: <%= getStateName(sellerGstin) %></div>
+        </div>
+
+        <!-- Info section (Buyer & Metadata) -->
+        <div class="info-section">
+            <div class="buyer-details">
+                <div class="section-title">Details of Buyer's (Billed to)</div>
+                <div class="info-row">
+                    <span class="info-label">Name:</span>
+                    <span class="info-val" style="font-weight: bold;"><%= customer.company_name.toUpperCase() %></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Address:</span>
+                    <span class="info-val"><%= customer.address || 'G-01/B, GROUND FLOOR, Atlanta Shoppers by Shree Krishna Developers, Vesu Main Road, Vesu, Surat, Surat, Gujarat, 395007' %></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Mob. No.:</span>
+                    <span class="info-val"><%= customer.contact_number || '' %></span>
+                </div>
+                <div class="info-row" style="margin-top: 8px;">
+                    <span class="info-label">GSTIN No.:</span>
+                    <span class="info-val" style="font-weight: bold;"><%= customer.gstin || 'N/A' %></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">State:</span>
+                    <span class="info-val"><%= getStateName(customer.gstin) %></span>
+                </div>
+            </div>
+            
+            <div class="metadata-details">
+                <div class="info-row" style="margin-top: 15px;">
+                    <span class="info-label">Invoice No:</span>
+                    <span class="info-val" style="font-weight: bold;"><%= invoiceNo %></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Invoice Dt.:</span>
+                    <span class="info-val" style="font-weight: bold;"><%= invoiceDate %></span>
+                </div>
+                <div class="info-row" style="margin-top: 15px;">
+                    <span class="info-label">State:</span>
+                    <span class="info-val"><%= getStateName(customer.gstin) %></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Items Table -->
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 5%;">Sr.</th>
+                    <th style="width: 35%; text-align: left;">Description of Goods</th>
+                    <th style="width: 10%;">HSN Code</th>
+                    <th style="width: 12%; text-align: right;">Qty</th>
+                    <th style="width: 8%; text-align: left;">Unit</th>
+                    <th style="width: 10%; text-align: right;">Rate</th>
+                    <th style="width: 10%; text-align: right;">Taxable Value</th>
+                    <th style="width: 10%;">GST %</th>
+                    <th style="width: 10%; text-align: right;">GST Amt</th>
+                    <th style="width: 12%; text-align: right;">Total Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% invoiceRows.forEach((row, idx) => { %>
+                    <tr>
+                        <td class="text-center"><%= idx + 1 %></td>
+                        <td class="text-left" style="font-weight: bold;"><%= row.productName.toUpperCase() %></td>
+                        <td class="text-center"><%= row.hsnCode || '' %></td>
+                        <td class="text-right"><%= row.displayQty.toFixed(2) %></td>
+                        <td class="text-left"><%= row.displayUnit %></td>
+                        <td class="text-right">₹<%= row.displayRate.toFixed(2) %></td>
+                        <td class="text-right">₹<%= row.taxableValue.toFixed(2) %></td>
+                        <td class="text-center"><%= row.gstPercentage.toFixed(1) %>%</td>
+                        <td class="text-right">₹<%= row.gstAmount.toFixed(2) %></td>
+                        <td class="text-right" style="font-weight: bold;">₹<%= row.totalAmount.toFixed(2) %></td>
+                    </tr>
+                <% }) %>
+                
+                <!-- Subtotal Row -->
+                <tr class="subtotal-row">
+                    <td colspan="6" class="text-right">Sub Total</td>
+                    <td class="text-right">₹<%= totals.subTotalTaxable.toFixed(2) %></td>
+                    <td class="text-center"></td>
+                    <td class="text-right">₹<%= totals.subTotalGst.toFixed(2) %></td>
+                    <td class="text-right">₹<%= totals.subTotalAmount.toFixed(2) %></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Footer Section -->
+        <div class="invoice-footer">
+            <div class="footer-left">
+                <!-- Bank account details -->
+                <div class="bank-details">
+                    <div class="bank-title">Bank Details:</div>
+                    <div><strong>Bank Name:</strong> THE VARACHHA CO-OPERATIVE BANK LTD, KATARGAM, SURAT</div>
+                    <div><strong>A/c. No.:</strong> 00630110681972 &nbsp;|&nbsp; <strong>IFSC Code:</strong> VARA0289006</div>
+                    <div><strong>Account Holder's Name:</strong> DADA ENTERPRISE</div>
+                </div>
+
+                <!-- GST Split summary grid -->
+                <div style="margin-top: 10px;">
+                    <div style="font-weight: bold; font-size: 11px; margin-bottom: 5px; text-decoration: underline;">GST Tax Breakup Summary:</div>
+                    <table class="gst-split-table">
+                        <thead>
+                            <% if (isIntraState) { %>
+                                <tr>
+                                    <th style="text-align: center;">GST %</th>
+                                    <th>Taxable Amt</th>
+                                    <th>CGST Amt.</th>
+                                    <th>SGST Amt.</th>
+                                    <th>Total Amt.</th>
+                                </tr>
+                            <% } else { %>
+                                <tr>
+                                    <th style="text-align: center;">GST %</th>
+                                    <th>Taxable Amt</th>
+                                    <th>IGST Amt.</th>
+                                    <th>Total Amt.</th>
+                                </tr>
+                            <% } %>
+                        </thead>
+                        <tbody>
+                            <% gstBreakdown.forEach(group => { %>
+                                <tr>
+                                    <td style="text-align: center; font-weight: bold;"><%= group.gstPercentage.toFixed(2) %>%</td>
+                                    <td>₹<%= group.taxableAmt.toFixed(2) %></td>
+                                    <% if (isIntraState) { %>
+                                        <td><%= group.gstPercentage > 0 ? '₹' + group.cgstAmt.toFixed(2) : '' %></td>
+                                        <td><%= group.gstPercentage > 0 ? '₹' + group.sgstAmt.toFixed(2) : '' %></td>
+                                    <% } else { %>
+                                        <td><%= group.gstPercentage > 0 ? '₹' + group.igstAmt.toFixed(2) : '' %></td>
+                                    <% } %>
+                                    <td style="font-weight: bold;">₹<%= group.totalAmt.toFixed(2) %></td>
+                                </tr>
+                            <% }) %>
+                            <!-- Breakup Total Row -->
+                            <tr style="font-weight: bold; background-color: #f5f5f5;">
+                                <td style="text-align: center;">Total</td>
+                                <td>₹<%= totals.overallTaxable.toFixed(2) %></td>
+                                <% if (isIntraState) { %>
+                                    <td>₹<%= totals.overallCgst.toFixed(2) %></td>
+                                    <td>₹<%= totals.overallSgst.toFixed(2) %></td>
+                                <% } else { %>
+                                    <td>₹<%= totals.overallIgst.toFixed(2) %></td>
+                                <% } %>
+                                <td>₹<%= totals.overallTotalAmt.toFixed(2) %></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="terms-block">
+                    <strong>Terms:</strong> Thanks for doing business with us
+                </div>
+            </div>
+
+            <div class="footer-right">
+                <!-- Rounded totals and Words block -->
+                <div class="totals-block">
+                    <div class="total-row">
+                        <span>Sub Total:</span>
+                        <span>₹<%= totals.subTotalAmount.toFixed(2) %></span>
+                    </div>
+                    <div class="total-row">
+                        <span>Round Off:</span>
+                        <span><%= totals.roundOff < 0 ? '-' : '' %>₹<%= Math.abs(totals.roundOff).toFixed(2) %></span>
+                    </div>
+                    <div class="total-row grand-total">
+                        <span>TOTAL AMOUNT:</span>
+                        <span>₹<%= totals.finalRoundedTotal.toLocaleString('en-IN') %>.00</span>
+                    </div>
+                </div>
+
+                <div class="words-block">
+                    <strong>INR Rs:</strong> <%= totals.finalWords %>
+                </div>
+
+                <!-- Signatures -->
+                <div class="signature-section">
+                    <div class="sig-box">
+                        <div class="sig-line">Receiver's Signature</div>
+                    </div>
+                    <div class="sig-box">
+                        <div style="font-size: 11px; font-weight: bold; margin-bottom: 25px;">For, DADA ENTERPRISE</div>
+                        <div class="sig-line" style="font-size: 11px;">Authorized Signatory</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

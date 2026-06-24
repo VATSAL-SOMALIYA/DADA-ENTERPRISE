@@ -170,31 +170,51 @@
                         <p class="text-sm text-muted-fg">Select a date range to generate a GST-compliant invoice</p>
                     </div>
                 </div>
-                <form class="space-y-6">
-                    <div>
-                        <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">Select Customer</label>
-                        <select class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
-                            <option>Radhe Madhav Foods</option>
-                            <option>Test Client Ltd</option>
-                        </select>
+                <form action="/dashboard/reports/gst" method="GET" target="_blank" class="space-y-6">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">Select Customer</label>
+                            <select name="customerId" required class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary text-foreground">
+                                <option value="" disabled selected>Choose a customer...</option>
+                                <% if (typeof customers !== 'undefined') { %>
+                                    <% customers.forEach(customer => { %>
+                                        <option value="<%= customer.id %>"><%= customer.company_name %></option>
+                                    <% }) %>
+                                <% } %>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">Seller GSTIN</label>
+                            <input type="text" name="sellerGstin" value="24CGJPS5378A1Z9" required class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary text-foreground">
+                        </div>
                     </div>
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">From Date</label>
-                            <input type="date" class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
+                            <input type="date" name="startDate" required class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary text-foreground">
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">To Date</label>
-                            <input type="date" class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
+                            <input type="date" name="endDate" required class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary text-foreground">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">Invoice No</label>
+                            <input type="text" name="invoiceNo" required placeholder="e.g. 127" class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary text-foreground">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">Invoice Date</label>
+                            <input type="date" name="invoiceDate" required class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary text-foreground">
                         </div>
                     </div>
                     <div class="bg-muted/50 border border-border p-4 rounded-lg text-sm text-muted-fg space-y-2">
                         <p class="font-semibold text-foreground mb-3">Invoice will include:</p>
                         <p>• Product-wise itemization with HSN codes</p>
-                        <p>• GST @ 5% on all dairy & soy products</p>
-                        <p>• Consolidated quantities across all branches</p>
+                        <p>• GST @ 5% on all dairy & soy products (split into CGST/SGST or IGST)</p>
+                        <p>• Consolidated quantities across all branches (units converted to L/KG)</p>
                     </div>
-                    <button type="button" class="w-full bg-primary hover:bg-primary/90 text-primary-fg font-medium py-3 rounded transition flex justify-center items-center gap-2">
+                    <button type="submit" class="w-full bg-primary hover:bg-primary/90 text-primary-fg font-medium py-3 rounded transition flex justify-center items-center gap-2">
                         📄 Preview GST Invoice
                     </button>
                 </form>
@@ -202,37 +222,55 @@
         </div>
 
         <div id="tab-reports" class="hidden">
-            <div class="bg-card rounded-xl border border-border p-8 max-w-2xl">
-                <div class="flex items-center gap-4 mb-6">
-                    <div class="p-3 bg-muted rounded-lg text-xl">📊</div>
-                    <div>
-                        <h2 class="text-xl font-bold">Generate Overall Report</h2>
-                        <p class="text-sm text-muted-fg">Dispatch breakdown by product and branch for a date range</p>
-                    </div>
-                </div>
-                <form class="space-y-6">
-                    <div class="grid grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">From Date</label>
-                            <input type="date" class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">To Date</label>
-                            <input type="date" class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
-                        </div>
-                    </div>
-                    <div class="bg-muted/50 border border-border p-4 rounded-lg text-sm text-muted-fg space-y-2">
-                        <p class="font-semibold text-foreground mb-3">Report will include:</p>
-                        <p>• Total dispatch KPIs</p>
-                        <p>• Product-wise quantity breakdown</p>
-                        <p>• Branch-wise order volume ranking</p>
-                    </div>
-                    <button type="button" class="w-full bg-primary hover:bg-primary/90 text-primary-fg font-medium py-3 rounded transition flex justify-center items-center gap-2">
-                        📊 Generate Excel Report
-                    </button>
-                </form>
+    <div class="bg-card rounded-xl border border-border p-8 max-w-2xl">
+        <div class="flex items-center gap-4 mb-6">
+            <div class="p-3 bg-muted rounded-lg text-xl">📊</div>
+            <div>
+                <h2 class="text-xl font-bold">Generate Overall Report</h2>
+                <p class="text-sm text-muted-fg">Dispatch breakdown by product and customer for a date range</p>
             </div>
         </div>
+        
+        <form action="/dashboard/reports/generate" method="GET" target="_blank" class="space-y-6">
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">From Date</label>
+                    <input type="date" name="startDate" required class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">To Date</label>
+                    <input type="date" name="endDate" required class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-6">
+                <!-- ADMIN ONLY: Select Customer -->
+                <div>
+                    <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">Select Customer</label>
+                    <select name="customerId" class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
+                        <option value="">All Customers</option>
+                        <% if (typeof customers !== 'undefined') { %>
+                            <% customers.forEach(customer => { %>
+                                <option value="<%= customer.id %>"><%= customer.company_name %></option>
+                            <% }) %>
+                        <% } %>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">Report Type</label>
+                    <select name="reportType" required class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
+                        <option value="tofu">Tofu (Hard Paneer)</option>
+                        <option value="dairy">Dairy Products</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-primary text-primary-fg font-bold py-3 rounded-lg hover:opacity-90 transition shadow-md flex justify-center items-center gap-2">
+                ⬇ Download Report
+            </button>
+        </form>
+    </div>
+</div>
 
     </main>
 

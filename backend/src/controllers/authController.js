@@ -143,9 +143,11 @@ function isPasswordStrong(password) {
  * @returns {Promise<void>}
  */
 exports.handleRegister = async (req, res) => {
-  const { company_name, email, password } = req.body;
+  const { company_name, email, password, role } = req.body;
 
-  if (!company_name || !email || !password) {
+  const isRegisteringAdmin = (role === "admin");
+
+  if ((!isRegisteringAdmin && !company_name) || !email || !password) {
     return res.render("pages/login", { error: "All fields are required.", activeTab: "register" });
   }
 
@@ -180,7 +182,7 @@ exports.handleRegister = async (req, res) => {
        VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (email) 
        DO UPDATE SET otp = $2, expires_at = $3, type = $4, payload = $5`,
-      [email, otp, expiresAt, "register", JSON.stringify({ company_name, password: hashedPassword })]
+      [email, otp, expiresAt, "register", JSON.stringify({ company_name: isRegisteringAdmin ? "Master Admin" : company_name, password: hashedPassword, role: role || "customer" })]
     );
 
     // 7. Dispatch the OTP via mail service
@@ -304,15 +306,12 @@ exports.handleVerifyOtp = async (req, res) => {
     // OTP is valid, process verification based on the action type
     if (type === "register") {
       const payload = otpRecord.payload;
-
-      // Check current user count to determine role assignment
-      const usersCount = await pool.query("SELECT COUNT(*) FROM users");
-      const isFirstUser = parseInt(usersCount.rows[0].count) === 0;
+      const isRegisteringAdmin = (payload.role === "admin");
 
       let customerId = null;
 
-      if (isFirstUser) {
-        // First system user is registered as the Master Admin (no customer ID linked)
+      if (isRegisteringAdmin) {
+        // Registered as an Admin (no customer ID linked)
         const insertUser = await pool.query(
           "INSERT INTO users (name, email, password, customer_id, contact_number) VALUES ($1, $2, $3, $4, $5) RETURNING id",
           ["Master Admin", email, payload.password, null, "+91 9016764959"]

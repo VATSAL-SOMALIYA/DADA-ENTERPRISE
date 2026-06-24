@@ -81,8 +81,15 @@
             <!-- Register Form (Hidden) -->
             <form id="form-register" action="/register" method="POST" class="space-y-6 hidden">
                 <div>
+                    <label class="block text-sm font-medium mb-2">Register As</label>
+                    <select id="register-role" name="role" onchange="toggleCompanyField()" class="w-full bg-input border border-transparent focus:border-accent focus:ring-1 focus:ring-accent rounded px-4 py-3 outline-none transition">
+                        <option value="customer">Customer (Store Manager)</option>
+                        <option value="admin">Administrator</option>
+                    </select>
+                </div>
+                <div id="company-field">
                     <label class="block text-sm font-medium mb-2">Company Name</label>
-                    <input type="text" name="company_name" required placeholder="Enter Company Name" class="w-full bg-input border border-transparent focus:border-accent focus:ring-1 focus:ring-accent rounded px-4 py-3 outline-none transition">
+                    <input type="text" id="company_name" name="company_name" required placeholder="Enter Company Name" class="w-full bg-input border border-transparent focus:border-accent focus:ring-1 focus:ring-accent rounded px-4 py-3 outline-none transition">
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-2">Email Address</label>
@@ -108,6 +115,19 @@
             const btnR = document.getElementById('tab-register');
             btnS.className = isReg ? "w-1/2 text-muted-fg py-2.5 rounded text-sm font-medium transition" : "w-1/2 bg-primary text-primary-fg py-2.5 rounded shadow-sm text-sm font-medium transition";
             btnR.className = isReg ? "w-1/2 bg-primary text-primary-fg py-2.5 rounded shadow-sm text-sm font-medium transition" : "w-1/2 text-muted-fg py-2.5 rounded text-sm font-medium transition";
+        }
+
+        function toggleCompanyField() {
+            const role = document.getElementById('register-role').value;
+            const companyField = document.getElementById('company-field');
+            const companyInput = document.getElementById('company_name');
+            if (role === 'admin') {
+                companyField.classList.add('hidden');
+                companyInput.removeAttribute('required');
+            } else {
+                companyField.classList.remove('hidden');
+                companyInput.setAttribute('required', 'required');
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {

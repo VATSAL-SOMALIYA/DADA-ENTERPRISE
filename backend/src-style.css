@@ -1,4 +1,38 @@
-@import "./public/style.css";
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600&display=swap');
+@import "tailwindcss";
+@config "./tailwind.config.js";
+
+:root {
+  --font-size: 16px;
+  --background: #f7f3ec;
+  --foreground: #1a2118;
+  --card: #ffffff;
+  --card-foreground: #1a2118;
+  --primary: #1e3a28;
+  --primary-foreground: #f7f3ec;
+  --secondary: #eee8dd;
+  --muted: #e8e1d5;
+  --muted-foreground: #6b6355;
+  --accent: #c8a96e;
+  --border: rgba(30, 58, 40, 0.15);
+  --input-background: #f0ebe2;
+  --radius: 0.625rem;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--background);
+  color: var(--foreground);
+  margin: 0;
+}
+
+/* Custom class for the Serif headings */
+.font-serif-custom {
+  font-family: 'Playfair Display', serif;
+}
+
+/* Hide scrollbar for clean look */
+::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}

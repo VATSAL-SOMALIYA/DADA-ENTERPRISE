@@ -39,23 +39,25 @@
 </head>
 <body class="bg-background text-foreground min-h-screen">
 
-    <header class="bg-primary text-primary-fg px-6 py-4 flex justify-between items-center">
-        <div class="flex items-center gap-4">
+    <!-- Responsive Sticky Navigation Header -->
+    <header class="bg-primary text-primary-fg px-4 sm:px-6 py-4 flex flex-wrap justify-between items-center gap-4 sticky top-0 z-50 shadow-md">
+        <div class="flex items-center gap-2 sm:gap-4">
             <div class="w-8 h-8 bg-accent text-primary flex items-center justify-center font-bold rounded">D</div>
-            <h1 class="text-xl font-serif-custom tracking-wider font-semibold">DADA ENTERPRISE</h1>
-            <span class="border border-accent/50 text-accent text-xs px-2 py-1 rounded-full ml-2">🛡️ Admin</span>
+            <h1 class="text-lg sm:text-xl font-serif-custom tracking-wider font-semibold">DADA ENTERPRISE</h1>
+            <span class="border border-accent/50 text-accent text-[10px] sm:text-xs px-2 py-1 rounded-full ml-1 sm:ml-2">🛡️ Admin</span>
         </div>
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3 sm:gap-4">
             <button class="opacity-80 hover:opacity-100 transition">🔔</button>
             <div class="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full cursor-pointer">
                 <div class="w-6 h-6 bg-accent text-primary rounded-full flex items-center justify-center text-xs font-bold">A</div>
-                <span class="text-sm font-medium">Admin</span>
+                <span class="text-xs sm:text-sm font-medium">Admin</span>
             </div>
-            <a href="/logout" class="text-sm font-medium hover:text-accent transition ml-4 border-l border-white/30 pl-4">🚪 Logout</a>
+            <a href="/logout" class="text-xs sm:text-sm font-medium hover:text-accent transition ml-2 sm:ml-4 border-l border-white/30 pl-2 sm:pl-4">🚪 Logout</a>
         </div>
     </header>
 
-    <div class="bg-card border-b border-border px-8 py-4 flex gap-12 overflow-x-auto">
+    <!-- Wrap Stats Indicators on Tablet Screens -->
+    <div class="bg-card border-b border-border px-4 sm:px-8 py-4 flex flex-wrap gap-6 sm:gap-12 overflow-x-auto">
         <div class="flex items-center gap-3">
             <div class="p-2 bg-muted rounded"><span class="text-xl">👥</span></div>
             <div>
@@ -72,9 +74,10 @@
         </div>
     </div>
 
-    <main class="p-8 max-w-7xl mx-auto">
+    <main class="p-4 sm:p-8 max-w-7xl mx-auto w-full">
         
-        <div class="flex gap-2 border-b border-border mb-6">
+        <!-- Scrollable Tabs group on Mobile -->
+        <div class="flex gap-2 border-b border-border mb-6 overflow-x-auto whitespace-nowrap pb-1">
             <button onclick="switchTab('orders')" id="btn-orders" class="px-4 py-2 border-b-2 border-primary font-medium text-primary bg-white rounded-t-md transition">📦 Demand Data</button>
             <button onclick="switchTab('manage')" id="btn-manage" class="px-4 py-2 border-b-2 border-transparent text-muted-fg hover:text-foreground transition">✏️ Manage Orders</button>
             <button onclick="switchTab('gst')" id="btn-gst" class="px-4 py-2 border-b-2 border-transparent text-muted-fg hover:text-foreground transition">📄 GST Invoice</button>
@@ -93,15 +96,15 @@
                         <div class="bg-muted/30 px-6 py-4 border-b border-border">
                             <h2 class="text-lg font-bold text-primary flex items-center gap-2">🏢 <%= customerName %></h2>
                         </div>
-                        <div class="p-6 space-y-6">
+                        <div class="p-4 sm:p-6 space-y-6">
                             <% for (const [branchName, products] of Object.entries(branches)) { %>
                                 <div class="pl-4 border-l-2 border-accent">
                                     <h3 class="font-semibold mb-3 flex items-center gap-2 text-sm text-muted-fg">📍 <%= branchName %></h3>
-                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <!-- Responsive columns: 1 column on mobile, 2 columns on tablet, 4 on desktop -->
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                         <% products.forEach(item => { %>
                                             <div class="bg-background border border-border p-3 rounded flex justify-between items-center">
                                                 <span class="font-medium text-sm"><%= item.product %></span>
-                                                <!-- Unit completely removed, just pure numbers -->
                                                 <span class="text-sm font-bold bg-muted px-3 py-1 rounded shadow-sm"><%= item.qty %></span>
                                             </div>
                                         <% }) %>
@@ -114,9 +117,10 @@
             <% } %>
         </div>
 
+        <!-- Horizontal scrollbar support on Manage Orders table -->
         <div id="tab-manage" class="hidden space-y-6">
-            <div class="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
-                <table class="w-full text-left text-sm">
+            <div class="bg-card rounded-xl border border-border overflow-x-auto shadow-sm">
+                <table class="w-full text-left text-sm min-w-[700px] md:min-w-0">
                     <thead class="bg-primary text-primary-fg">
                         <tr>
                             <th class="p-4 font-medium tracking-wider">Order ID</th>
@@ -161,8 +165,9 @@
             </div>
         </div>
 
+        <!-- GST Invoice Input Grid responsiveness (collapses to 1 column on mobile) -->
         <div id="tab-gst" class="hidden">
-            <div class="bg-card rounded-xl border border-border p-8 max-w-2xl">
+            <div class="bg-card rounded-xl border border-border p-6 sm:p-8 max-w-2xl mx-auto shadow-sm">
                 <div class="flex items-center gap-4 mb-6">
                     <div class="p-3 bg-muted rounded-lg text-xl">📄</div>
                     <div>
@@ -171,7 +176,7 @@
                     </div>
                 </div>
                 <form action="/dashboard/reports/gst" method="GET" target="_blank" class="space-y-6">
-                    <div class="grid grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                         <div>
                             <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">Select Customer</label>
                             <select name="customerId" required class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary text-foreground">
@@ -188,7 +193,7 @@
                             <input type="text" name="sellerGstin" value="24CGJPS5378A1Z9" required class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary text-foreground">
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                         <div>
                             <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">From Date</label>
                             <input type="date" name="startDate" required class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary text-foreground">
@@ -198,7 +203,7 @@
                             <input type="date" name="endDate" required class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary text-foreground">
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                         <div>
                             <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">Invoice No</label>
                             <input type="text" name="invoiceNo" required placeholder="e.g. 127" class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary text-foreground">
@@ -221,59 +226,61 @@
             </div>
         </div>
 
+        <!-- Reports Grid responsiveness (collapses to 1 column on mobile) -->
         <div id="tab-reports" class="hidden">
-    <div class="bg-card rounded-xl border border-border p-8 max-w-2xl">
-        <div class="flex items-center gap-4 mb-6">
-            <div class="p-3 bg-muted rounded-lg text-xl">📊</div>
-            <div>
-                <h2 class="text-xl font-bold">Generate Overall Report</h2>
-                <p class="text-sm text-muted-fg">Dispatch breakdown by product and customer for a date range</p>
+            <div class="bg-card rounded-xl border border-border p-6 sm:p-8 max-w-2xl mx-auto shadow-sm">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="p-3 bg-muted rounded-lg text-xl">📊</div>
+                    <div>
+                        <h2 class="text-xl font-bold">Generate Overall Report</h2>
+                        <p class="text-sm text-muted-fg">Dispatch breakdown by product and customer for a date range</p>
+                    </div>
+                </div>
+                
+                <form action="/dashboard/reports/generate" method="GET" target="_blank" class="space-y-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                        <div>
+                            <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">From Date</label>
+                            <input type="date" name="startDate" required class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">To Date</label>
+                            <input type="date" name="endDate" required class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                        <!-- ADMIN ONLY: Select Customer -->
+                        <div>
+                            <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">Select Customer</label>
+                            <select name="customerId" class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
+                                <option value="">All Customers</option>
+                                <% if (typeof customers !== 'undefined') { %>
+                                    <% customers.forEach(customer => { %>
+                                        <option value="<%= customer.id %>"><%= customer.company_name %></option>
+                                    <% }) %>
+                                <% } %>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">Report Type</label>
+                            <select name="reportType" required class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
+                                <option value="tofu">Tofu (Hard Paneer)</option>
+                                <option value="dairy">Dairy Products</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-primary text-primary-fg font-bold py-3 rounded-lg hover:opacity-90 transition shadow-md flex justify-center items-center gap-2">
+                        ⬇ Download Report
+                    </button>
+                </form>
             </div>
         </div>
-        
-        <form action="/dashboard/reports/generate" method="GET" target="_blank" class="space-y-6">
-            <div class="grid grid-cols-2 gap-6">
-                <div>
-                    <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">From Date</label>
-                    <input type="date" name="startDate" required class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">To Date</label>
-                    <input type="date" name="endDate" required class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-6">
-                <!-- ADMIN ONLY: Select Customer -->
-                <div>
-                    <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">Select Customer</label>
-                    <select name="customerId" class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
-                        <option value="">All Customers</option>
-                        <% if (typeof customers !== 'undefined') { %>
-                            <% customers.forEach(customer => { %>
-                                <option value="<%= customer.id %>"><%= customer.company_name %></option>
-                            <% }) %>
-                        <% } %>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">Report Type</label>
-                    <select name="reportType" required class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary">
-                        <option value="tofu">Tofu (Hard Paneer)</option>
-                        <option value="dairy">Dairy Products</option>
-                    </select>
-                </div>
-            </div>
-
-            <button type="submit" class="w-full bg-primary text-primary-fg font-bold py-3 rounded-lg hover:opacity-90 transition shadow-md flex justify-center items-center gap-2">
-                ⬇ Download Report
-            </button>
-        </form>
-    </div>
-</div>
 
     </main>
 
+    <!-- Fulfill Modal table scrollable wrapper for small screen responsiveness -->
     <div id="fulfillModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-card rounded-xl max-w-3xl w-full shadow-2xl overflow-hidden border border-border flex flex-col max-h-[90vh]">
             <div class="px-6 py-4 border-b border-border bg-muted/30 flex justify-between items-center">
@@ -284,23 +291,24 @@
                 <button type="button" onclick="document.getElementById('fulfillModal').classList.add('hidden')" class="text-muted-fg hover:text-foreground text-3xl leading-none">&times;</button>
             </div>
             <form id="fulfill-form" method="POST" class="flex flex-col overflow-hidden">
-                <div class="p-6 overflow-y-auto">
-                    <!-- Note added at the top, units removed from the table -->
+                <div class="p-4 sm:p-6 overflow-y-auto">
                     <p class="text-sm text-muted-fg mb-4">
                         Adjust the actual delivered quantities below. If an item was not delivered, set it to 0.<br>
                         <span class="text-xs text-primary font-medium">Note: All values represent standard product units.</span>
                     </p>
-                    <table class="w-full text-left text-sm border border-border rounded-lg overflow-hidden">
-                        <thead class="bg-muted text-muted-fg">
-                            <tr>
-                                <th class="p-3 font-medium">Branch</th>
-                                <th class="p-3 font-medium">Product</th>
-                                <th class="p-3 font-medium text-center">Requested Qty</th>
-                                <th class="p-3 font-medium text-right w-48">Actual Delivered Qty</th>
-                            </tr>
-                        </thead>
-                        <tbody id="fulfill-items-tbody" class="divide-y divide-border"></tbody>
-                    </table>
+                    <div class="overflow-x-auto border border-border rounded-lg">
+                        <table class="w-full text-left text-sm min-w-[500px]">
+                            <thead class="bg-muted text-muted-fg">
+                                <tr>
+                                    <th class="p-3 font-medium">Branch</th>
+                                    <th class="p-3 font-medium">Product</th>
+                                    <th class="p-3 font-medium text-center">Requested Qty</th>
+                                    <th class="p-3 font-medium text-right w-48">Actual Delivered Qty</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fulfill-items-tbody" class="divide-y divide-border"></tbody>
+                        </table>
+                    </div>
                 </div>
                 <div class="px-6 py-4 border-t border-border bg-muted/10 flex justify-end gap-3">
                     <button type="button" onclick="document.getElementById('fulfillModal').classList.add('hidden')" class="px-4 py-2 border border-border rounded text-foreground hover:bg-muted transition">Cancel</button>
@@ -354,7 +362,6 @@
                     tr.innerHTML = `
                         <td class="p-3 font-bold text-xs text-primary uppercase">${item.branch_name}</td>
                         <td class="p-3 font-medium">${item.product_name}</td>
-                        <!-- Stripped the unit entirely here -->
                         <td class="p-3 font-mono text-muted-fg font-bold text-center">${item.ordered_quantity}</td>
                         <td class="p-3 text-right">
                             <input 

@@ -12,15 +12,15 @@
 </head>
 <body class="bg-background text-foreground min-h-screen font-sans flex flex-col">
 
-    <header class="bg-primary text-primary-fg px-6 py-4 flex justify-between items-center shadow-md sticky top-0 z-50">
-        <div class="flex items-center gap-4">
+    <header class="bg-primary text-primary-fg px-4 sm:px-6 py-4 flex flex-wrap justify-between items-center gap-4 shadow-md sticky top-0 z-50">
+        <div class="flex items-center gap-2 sm:gap-4">
             <div class="w-8 h-8 bg-accent text-primary flex items-center justify-center font-bold rounded shadow-inner">D</div>
-            <h1 class="text-xl font-serif-custom tracking-wider font-semibold">DADA ENTERPRISE</h1>
-            <span class="border border-white/20 bg-white/10 text-white text-[10px] px-2 py-1 rounded-full ml-2 uppercase tracking-widest">Client Portal</span>
+            <h1 class="text-lg sm:text-xl font-serif-custom tracking-wider font-semibold">DADA ENTERPRISE</h1>
+            <span class="border border-white/20 bg-white/10 text-white text-[9px] sm:text-[10px] px-2 py-1 rounded-full ml-1 sm:ml-2 uppercase tracking-widest">Client Portal</span>
         </div>
-        <div class="flex items-center gap-4">
-            <span class="text-sm opacity-80 hidden md:block">Welcome back</span>
-            <a href="/logout" class="text-sm font-medium hover:text-accent transition">🚪 Logout</a>
+        <div class="flex items-center gap-3 sm:gap-4">
+            <span class="text-xs sm:text-sm opacity-80 hidden sm:block">Welcome back</span>
+            <a href="/logout" class="text-xs sm:text-sm font-medium hover:text-accent transition">🚪 Logout</a>
         </div>
     </header>
 
@@ -107,8 +107,8 @@
         </div>
 
         <div id="section-history" class="hidden">
-            <div class="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
-                <table class="w-full text-left text-sm">
+            <div class="bg-card rounded-xl border border-border overflow-x-auto shadow-sm">
+                <table class="w-full text-left text-sm min-w-[700px] md:min-w-0">
                     <thead class="bg-primary text-primary-fg">
                         <tr>
                             <th class="p-4 font-medium tracking-wider">Order ID</th>
@@ -221,19 +221,20 @@
                 </div>
                 <button type="button" onclick="document.getElementById('invoiceModal').classList.add('hidden')" class="text-muted-fg hover:text-foreground text-3xl leading-none">&times;</button>
             </div>
-            <div class="p-6 overflow-y-auto">
-                <div class="flex justify-between mb-6 bg-background border border-border p-4 rounded-lg">
+            <div class="p-4 sm:p-6 overflow-y-auto">
+                <div class="flex flex-col sm:flex-row justify-between gap-4 mb-6 bg-background border border-border p-4 rounded-lg">
                     <div>
                         <p class="text-xs text-muted-fg uppercase tracking-widest font-bold mb-1">Entity</p>
                         <p id="modal-branch-name" class="font-bold text-foreground"></p>
                         <p id="modal-branch-address" class="text-sm text-muted-fg mt-1"></p>
                     </div>
-                    <div class="text-right">
+                    <div class="text-left sm:text-right">
                         <p class="text-xs text-muted-fg uppercase tracking-widest font-bold mb-1">Status</p>
                         <div id="modal-status"></div>
                     </div>
                 </div>
-                <table class="w-full text-left text-sm border border-border rounded-lg overflow-hidden">
+                <div class="overflow-x-auto border border-border rounded-lg">
+                    <table class="w-full text-left text-sm min-w-[550px]">
                     <thead class="bg-muted text-muted-fg">
                         <tr>
                             <th class="p-3 font-medium">Branch</th>

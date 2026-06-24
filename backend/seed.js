@@ -1,8 +1,9 @@
-// seed.js
 const pool = require("./src/config/db");
 const bcrypt = require("bcrypt");
+const initDb = require("./src/config/initDb");
 
 async function createAdmin() {
+  await initDb();
   console.log("Starting database seeding...");
 
   const email = "dada@admin.com";

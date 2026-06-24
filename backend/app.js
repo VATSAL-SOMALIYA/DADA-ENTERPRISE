@@ -17,19 +17,9 @@ const dashboardRoutes = require("./src/routes/dashboardRoutes");
 
 const pool = require("./src/config/db");
 
-// Verify and initialize database tables on startup.
-// Creates the `otp_verifications` table if it does not already exist,
-// supporting one-time passcode checks for secure registration and password recovery.
-pool.query(`
-  CREATE TABLE IF NOT EXISTS otp_verifications (
-    id SERIAL PRIMARY KEY,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    otp VARCHAR(6) NOT NULL,
-    expires_at TIMESTAMP NOT NULL,
-    type VARCHAR(50) NOT NULL,
-    payload JSONB
-  );
-`).catch(err => console.error("❌ Error creating otp_verifications table:", err));
+// Verify and initialize database tables and seed defaults on startup.
+const initDb = require("./src/config/initDb");
+initDb().catch(err => console.error("❌ Error initializing database schema on startup:", err));
 
 const app = express();
 

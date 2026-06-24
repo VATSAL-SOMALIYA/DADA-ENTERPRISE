@@ -1,6 +1,8 @@
 const pool = require("./src/config/db");
+const initDb = require("./src/config/initDb");
 
 async function clear() {
+  await initDb();
   console.log("Purging all users from database...");
   try {
     await pool.query("TRUNCATE TABLE users CASCADE");

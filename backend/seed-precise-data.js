@@ -1,4 +1,5 @@
 const pool = require("./src/config/db");
+const initDb = require("./src/config/initDb");
 
 const tofuData = {
   "Adajan": [11.05, 12.14, 11.37, 11.175, 11.35, 5.56, 8.43, 7.95, 11.02, 12.32],
@@ -72,6 +73,7 @@ const dates = [
 ];
 
 async function seedPreciseData() {
+  await initDb();
   console.log("Cleaning existing orders and order_items...");
   try {
     await pool.query("BEGIN");

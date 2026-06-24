@@ -1,6 +1,8 @@
 const pool = require("./src/config/db");
+const initDb = require("./src/config/initDb");
 
 async function seedTestData() {
+  await initDb();
   console.log("Cleaning existing orders data...");
   try {
     await pool.query("BEGIN");

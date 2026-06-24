@@ -1,7 +1,9 @@
 const pool = require("./src/config/db");
 const bcrypt = require("bcrypt");
+const initDb = require("./src/config/initDb");
 
 async function createDummyCustomer() {
+  await initDb();
   console.log("Starting customer database seeding...");
 
   const companyName = "Radhe Madhav Foods";

@@ -179,32 +179,49 @@ exports.handleRegister = async (req, res) => {
       return res.render("pages/login", { error: "Email is already registered.", activeTab: "register" });
     }
 
-    // 4. Generate a random 6-digit numeric OTP code
-    const otp = crypto.randomInt(100000, 999999).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // code expires in 10 minutes
-
-    // 5. Hash the plain text password prior to saving
+    // 4. Hash the plain text password prior to saving
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 6. Save or update the OTP verification record with sign-up details
-    await pool.query(
-      `INSERT INTO otp_verifications (email, otp, expires_at, type, payload) 
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (email) 
-       DO UPDATE SET otp = $2, expires_at = $3, type = $4, payload = $5`,
-      [email, otp, expiresAt, "register", JSON.stringify({ company_name: isRegisteringAdmin ? "Master Admin" : company_name, password: hashedPassword, role: role || "customer" })]
+    let customerId = null;
+    let userId;
+
+    if (isRegisteringAdmin) {
+      // Direct Admin registration
+      const insertUser = await pool.query(
+        "INSERT INTO users (name, email, password, customer_id, contact_number) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+        ["Master Admin", email, hashedPassword, null, "+91 9016764959"]
+      );
+      userId = insertUser.rows[0].id;
+    } else {
+      // Direct Customer registration
+      const insertCustomer = await pool.query(
+        "INSERT INTO customers (company_name, contact_number) VALUES ($1, $2) RETURNING id",
+        [company_name, "+91 9016764959"]
+      );
+      customerId = insertCustomer.rows[0].id;
+
+      const insertUser = await pool.query(
+        "INSERT INTO users (name, email, password, customer_id, contact_number) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+        [company_name, email, hashedPassword, customerId, "+91 9016764959"]
+      );
+      userId = insertUser.rows[0].id;
+    }
+
+    // 5. Sign and issue session cookie directly
+    const token = jwt.sign(
+      { id: userId, customer_id: customerId },
+      process.env.JWT_SECRET || "fallback_secret_key",
+      { expiresIn: "365d" }
     );
 
-    // 7. Dispatch the OTP via mail service
-    const { sendMail } = require("../config/mailService");
-    await sendMail(
-      email,
-      "DADA Enterprise - Verification OTP",
-      `Your verification OTP is: ${otp}\nThis OTP is valid for 10 minutes.`
-    );
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false, // Ensure session persists across HTTP and HTTPS
+      maxAge: 365 * 24 * 60 * 60 * 1000,
+      sameSite: "lax",
+    });
 
-    // 8. Redirect to the OTP input view
-    res.redirect(`/verify-otp?email=${encodeURIComponent(email)}&type=register`);
+    return res.redirect("/dashboard");
   } catch (err) {
     console.error("Register error:", err);
     res.render("pages/login", { error: "An error occurred during registration. Please try again.", activeTab: "register" });
@@ -233,29 +250,18 @@ exports.handleForgotPassword = async (req, res) => {
       return res.render("pages/login", { error: "Email not found." });
     }
 
-    // 2. Generate a random 6-digit numeric recovery code
-    const otp = crypto.randomInt(100000, 999999).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // valid for 10 minutes
+    // 2. Generate a crypto-secure token for password reset bypass
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const expires = new Date(Date.now() + 10 * 60 * 1000); // link is valid for 10 minutes
 
-    // 3. Write the recovery OTP to the database
+    // 3. Store the token and expiry details against the user record
     await pool.query(
-      `INSERT INTO otp_verifications (email, otp, expires_at, type, payload) 
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (email) 
-       DO UPDATE SET otp = $2, expires_at = $3, type = $4, payload = $5`,
-      [email, otp, expiresAt, "forgot_password", null]
+      "UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE email = $3",
+      [resetToken, expires, email]
     );
 
-    // 4. Dispatch the recovery code email
-    const { sendMail } = require("../config/mailService");
-    await sendMail(
-      email,
-      "DADA Enterprise - Password Reset OTP",
-      `Your password reset OTP is: ${otp}\nThis OTP is valid for 10 minutes.`
-    );
-
-    // 5. Redirect to the OTP input screen
-    res.redirect(`/verify-otp?email=${encodeURIComponent(email)}&type=forgot_password`);
+    // 4. Directly redirect to the reset password page
+    return res.redirect(`/reset-password/${resetToken}`);
   } catch (err) {
     console.error("Forgot password error:", err);
     res.render("pages/login", { error: "An error occurred. Please try again." });

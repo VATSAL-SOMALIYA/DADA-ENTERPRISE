@@ -18,6 +18,17 @@ const pool = require("../config/db");
 exports.renderDashboard = async (req, res) => {
   try {
     const customerId = req.user.customer_id;
+    const userId = req.user.id;
+
+    // Fetch user details for dashboard headers
+    const userQuery = await pool.query(
+      `SELECT u.name AS user_name, c.company_name 
+       FROM users u 
+       LEFT JOIN customers c ON u.customer_id = c.id 
+       WHERE u.id = $1`,
+      [userId]
+    );
+    const user = userQuery.rows[0] || { user_name: "User", company_name: "Customer" };
 
     // Shift current system time to Indian Standard Time (IST) to ensure correct date boundary calculations.
     // 'en-CA' outputs date in format YYYY-MM-DD, matching standard date comparisons.
@@ -71,7 +82,8 @@ exports.renderDashboard = async (req, res) => {
         stats: { customers: customerCount.rows[0].count, branches: branchCount.rows[0].count },
         groupedData: groupedData,
         orders: allOrdersQuery.rows,
-        customers: customersQuery.rows
+        customers: customersQuery.rows,
+        user: user
       });
     }
 
@@ -97,7 +109,7 @@ exports.renderDashboard = async (req, res) => {
       branches: branchesQuery.rows.length
     };
 
-    return res.render("pages/customer-dashboard", { stats, branches: branchesQuery.rows, products: productsQuery.rows, orders: ordersQuery.rows });
+    return res.render("pages/customer-dashboard", { stats, branches: branchesQuery.rows, products: productsQuery.rows, orders: ordersQuery.rows, user: user });
 
   } catch (err) {
     console.error("Dashboard Error:", err);

@@ -16,7 +16,7 @@
             <span class="border border-white/20 bg-white/10 text-white text-[9px] sm:text-[10px] px-2 py-1 rounded-full ml-1 sm:ml-2 uppercase tracking-widest">Client Portal</span>
         </div>
         <div class="flex items-center gap-3 sm:gap-4">
-            <span class="text-xs sm:text-sm opacity-80 hidden sm:block">Welcome back</span>
+            <span class="text-xs sm:text-sm opacity-80 hidden sm:block">Welcome back, <strong><%= user.user_name %> (<%= user.company_name %>)</strong></span>
             <a href="/logout" class="text-xs sm:text-sm font-medium hover:text-accent transition">🚪 Logout</a>
         </div>
     </header>

@@ -231,6 +231,13 @@ async function initDb() {
 
       console.log("✅ Default users seeded.");
     }
+
+    // 6. Synchronize primary key sequences for all tables to prevent duplicate key errors on future inserts
+    const tablesToSync = ["branches", "customers", "users", "orders", "order_items", "products"];
+    for (const table of tablesToSync) {
+      await pool.query(`SELECT setval('${table}_id_seq', COALESCE((SELECT MAX(id) FROM ${table}), 1))`);
+    }
+    console.log("✅ Database sequences synchronized.");
     
     console.log("✅ Database schema initialization completed successfully!");
   } catch (err) {

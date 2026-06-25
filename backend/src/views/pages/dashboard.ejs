@@ -161,18 +161,28 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                         <div>
                             <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">Select Customer</label>
-                            <select name="customerId" required class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary text-foreground">
+                            <select name="customerId" id="gst-customer-select" required class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary text-foreground">
                                 <option value="" disabled selected>Choose a customer...</option>
                                 <% if (typeof customers !== 'undefined') { %>
                                     <% customers.forEach(customer => { %>
-                                        <option value="<%= customer.id %>"><%= customer.company_name %></option>
+                                        <option value="<%= customer.id %>" data-gstin="<%= customer.gstin || '' %>"><%= customer.company_name %></option>
                                     <% }) %>
                                 <% } %>
                             </select>
                         </div>
                         <div>
+                            <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">Customer GSTIN</label>
+                            <input type="text" name="customerGstin" id="customer-gstin-input" placeholder="Enter Customer GSTIN" class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary text-foreground">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                        <div>
                             <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">Seller GSTIN</label>
-                            <input type="text" name="sellerGstin" value="24CGJPS5378A1Z9" required class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary text-foreground">
+                            <input type="text" name="sellerGstin" value="24DADA1234F1Z5" required class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary text-foreground">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">Invoice No</label>
+                            <input type="text" name="invoiceNo" required placeholder="e.g. 127" class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary text-foreground">
                         </div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -186,10 +196,6 @@
                         </div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                        <div>
-                            <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">Invoice No</label>
-                            <input type="text" name="invoiceNo" required placeholder="e.g. 127" class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary text-foreground">
-                        </div>
                         <div>
                             <label class="block text-sm font-medium mb-2 uppercase text-muted-fg text-xs tracking-wider">Invoice Date</label>
                             <input type="date" name="invoiceDate" required class="w-full bg-background border border-border rounded p-3 outline-none focus:border-primary text-foreground">
@@ -365,6 +371,20 @@
                 alert("Could not load order details.");
             }
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const customerSelect = document.getElementById('gst-customer-select');
+            if (customerSelect) {
+                customerSelect.addEventListener('change', function() {
+                    const selectedOption = this.options[this.selectedIndex];
+                    const gstin = selectedOption.getAttribute('data-gstin') || '';
+                    const gstinInput = document.getElementById('customer-gstin-input');
+                    if (gstinInput) {
+                        gstinInput.value = gstin;
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>

@@ -352,7 +352,7 @@ function numberToIndianWords(num) {
  * @returns {Promise<void>}
  */
 exports.generateGstInvoice = async (req, res) => {
-    const { customerId, startDate, endDate, invoiceDate, invoiceNo, sellerGstin } = req.query;
+    const { customerId, startDate, endDate, invoiceDate, invoiceNo, sellerGstin, customerGstin } = req.query;
 
     if (!customerId || !startDate || !endDate || !invoiceDate || !invoiceNo || !sellerGstin) {
         return res.status(400).send("Missing required parameters for GST invoice.");
@@ -365,6 +365,15 @@ exports.generateGstInvoice = async (req, res) => {
             return res.status(404).send("Customer not found.");
         }
         const customer = customerResult.rows[0];
+
+        // 1b. If customerGstin is provided and is different from the database record, update it
+        if (customerGstin !== undefined) {
+            const cleanGstin = customerGstin.trim();
+            if (cleanGstin !== (customer.gstin || "")) {
+                await pool.query("UPDATE customers SET gstin = $1 WHERE id = $2", [cleanGstin || null, customerId]);
+                customer.gstin = cleanGstin || null;
+            }
+        }
 
         // 2. Fetch order items (aggregated by product HSN code and rate at time of order)
         const query = `

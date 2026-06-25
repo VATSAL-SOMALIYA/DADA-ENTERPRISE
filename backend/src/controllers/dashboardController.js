@@ -76,7 +76,7 @@ exports.renderDashboard = async (req, res) => {
         ORDER BY o.created_at DESC
       `, [todayIST]);
 
-      const customersQuery = await pool.query("SELECT id, company_name FROM customers ORDER BY company_name");
+      const customersQuery = await pool.query("SELECT id, company_name, gstin FROM customers ORDER BY company_name");
 
       return res.render("pages/dashboard", { 
         stats: { customers: customerCount.rows[0].count, branches: branchCount.rows[0].count },

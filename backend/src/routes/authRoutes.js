@@ -25,6 +25,16 @@ router.post("/register", authController.handleRegister);
 // POST /forgot-password - Dispatches password recovery OTP if email exists in database
 router.post("/forgot-password", authController.handleForgotPassword);
 
+// SECURITY NOTE: While useful for quick password recovery without external email services,
+// using security questions is not a secure standard for public-facing production apps.
+// Ideally, multi-factor authentication (MFA) or email/SMS OTP should be used.
+
+// GET /verify-security-question - Renders the security question challenge form
+router.get("/verify-security-question", authController.renderVerifySecurityQuestion);
+
+// POST /verify-security-question - Validates the answer and generates a password reset token
+router.post("/verify-security-question", authController.handleVerifySecurityQuestion);
+
 // GET /reset-password/:token - Renders the password reset view for verified recovery tokens
 router.get("/reset-password/:token", authController.renderResetPassword);
 

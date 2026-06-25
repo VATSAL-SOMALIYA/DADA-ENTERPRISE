@@ -38,7 +38,9 @@ async function initDb() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         reset_token VARCHAR(255),
         reset_token_expires TIMESTAMP,
-        contact_number VARCHAR(255)
+        contact_number VARCHAR(255),
+        security_question VARCHAR(255) NOT NULL DEFAULT 'What is your favorite food?',
+        security_answer VARCHAR(255) NOT NULL DEFAULT 'dhokla'
       );
     `);
 
@@ -96,6 +98,14 @@ async function initDb() {
         type VARCHAR(50) NOT NULL,
         payload JSONB
       );
+    `);
+
+    // Migration: ensure security question & answer columns exist for legacy users
+    // Note: While useful for our current workflow, using static security questions for password recovery 
+    // is not the most secure standard (MFA/TOTP/email verification is preferred in high-security production environments).
+    await pool.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS security_question VARCHAR(255) NOT NULL DEFAULT 'What is your favorite food?';
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS security_answer VARCHAR(255) NOT NULL DEFAULT 'dhokla';
     `);
 
     console.log("✅ Database tables verified.");

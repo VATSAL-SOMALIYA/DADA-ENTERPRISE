@@ -153,11 +153,11 @@ function isPasswordStrong(password) {
  * @returns {Promise<void>}
  */
 exports.handleRegister = async (req, res) => {
-  const { company_name, email, password, role } = req.body;
+  const { company_name, email, password, role, security_question, security_answer } = req.body;
 
   const isRegisteringAdmin = (role === "admin");
 
-  if ((!isRegisteringAdmin && !company_name) || !email || !password) {
+  if ((!isRegisteringAdmin && !company_name) || !email || !password || !security_question || !security_answer) {
     return res.render("pages/login", { error: "All fields are required.", activeTab: "register" });
   }
 
@@ -188,8 +188,8 @@ exports.handleRegister = async (req, res) => {
     if (isRegisteringAdmin) {
       // Direct Admin registration
       const insertUser = await pool.query(
-        "INSERT INTO users (name, email, password, customer_id, contact_number) VALUES ($1, $2, $3, $4, $5) RETURNING id",
-        ["Master Admin", email, hashedPassword, null, "+91 9016764959"]
+        "INSERT INTO users (name, email, password, customer_id, contact_number, security_question, security_answer) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
+        ["Master Admin", email, hashedPassword, null, "+91 9016764959", security_question, security_answer]
       );
       userId = insertUser.rows[0].id;
     } else {
@@ -201,8 +201,8 @@ exports.handleRegister = async (req, res) => {
       customerId = insertCustomer.rows[0].id;
 
       const insertUser = await pool.query(
-        "INSERT INTO users (name, email, password, customer_id, contact_number) VALUES ($1, $2, $3, $4, $5) RETURNING id",
-        [company_name, email, hashedPassword, customerId, "+91 9016764959"]
+        "INSERT INTO users (name, email, password, customer_id, contact_number, security_question, security_answer) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
+        [company_name, email, hashedPassword, customerId, "+91 9016764959", security_question, security_answer]
       );
       userId = insertUser.rows[0].id;
     }
@@ -250,18 +250,8 @@ exports.handleForgotPassword = async (req, res) => {
       return res.render("pages/login", { error: "Email not found." });
     }
 
-    // 2. Generate a crypto-secure token for password reset bypass
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    const expires = new Date(Date.now() + 10 * 60 * 1000); // link is valid for 10 minutes
-
-    // 3. Store the token and expiry details against the user record
-    await pool.query(
-      "UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE email = $3",
-      [resetToken, expires, email]
-    );
-
-    // 4. Directly redirect to the reset password page
-    return res.redirect(`/reset-password/${resetToken}`);
+    // 2. Redirect to the security question verification challenge page
+    return res.redirect(`/verify-security-question?email=${encodeURIComponent(email)}`);
   } catch (err) {
     console.error("Forgot password error:", err);
     res.render("pages/login", { error: "An error occurred. Please try again." });
@@ -451,5 +441,94 @@ exports.handleResetPassword = async (req, res) => {
   } catch (err) {
     console.error("Reset Password Error:", err);
     res.status(500).send("Database error.");
+  }
+};
+
+/**
+ * Renders the Security Question Verification page.
+ * NOTE: While useful for our current workflow, using static security questions for password recovery 
+ * is not the most secure standard (MFA/TOTP/email verification is preferred in high-security production environments).
+ * 
+ * @param {import("express").Request} req - Express request object.
+ * @param {import("express").Response} res - Express response object.
+ * @returns {Promise<void>}
+ */
+exports.renderVerifySecurityQuestion = async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    return res.redirect("/");
+  }
+
+  try {
+    const result = await pool.query("SELECT security_question FROM users WHERE email = $1", [email]);
+    if (result.rows.length === 0) {
+      return res.redirect("/");
+    }
+
+    res.render("pages/verify-security-question", {
+      email,
+      question: result.rows[0].security_question,
+      error: null
+    });
+  } catch (err) {
+    console.error("Render Verify Security Question Error:", err);
+    res.redirect("/");
+  }
+};
+
+/**
+ * Validates the security answer. If correct, generates a password reset token and redirects the user.
+ * NOTE: While useful for our current workflow, using static security questions for password recovery 
+ * is not the most secure standard (MFA/TOTP/email verification is preferred in high-security production environments).
+ * 
+ * @param {import("express").Request} req - Express request object.
+ * @param {import("express").Response} res - Express response object.
+ * @returns {Promise<void>}
+ */
+exports.handleVerifySecurityQuestion = async (req, res) => {
+  const { email, security_answer } = req.body;
+
+  if (!email || !security_answer) {
+    return res.render("pages/verify-security-question", {
+      email: email || "",
+      question: "Unknown security question",
+      error: "All fields are required."
+    });
+  }
+
+  try {
+    const result = await pool.query("SELECT security_question, security_answer FROM users WHERE email = $1", [email]);
+    if (result.rows.length === 0) {
+      return res.redirect("/");
+    }
+
+    const user = result.rows[0];
+
+    const inputAnswer = security_answer.trim().toLowerCase();
+    const storedAnswer = user.security_answer.trim().toLowerCase();
+
+    if (inputAnswer !== storedAnswer) {
+      return res.render("pages/verify-security-question", {
+        email,
+        question: user.security_question,
+        error: "Incorrect answer to security question."
+      });
+    }
+
+    // Generate a crypto-secure token for password reset bypass
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const expires = new Date(Date.now() + 10 * 60 * 1000); // reset link is valid for 10 minutes
+
+    // Store the token and expiry details against the user record
+    await pool.query(
+      "UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE email = $3",
+      [resetToken, expires, email]
+    );
+
+    return res.redirect(`/reset-password/${resetToken}`);
+  } catch (err) {
+    console.error("Verify Security Question Error:", err);
+    res.redirect("/");
   }
 };

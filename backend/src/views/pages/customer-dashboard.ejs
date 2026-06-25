@@ -187,100 +187,125 @@
 
     </main>
 
-    <div id="branchModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-card rounded-xl max-w-md w-full shadow-2xl overflow-hidden border border-border">
-            <div class="px-6 py-4 border-b border-border bg-muted/30 flex justify-between items-center">
-                <h3 class="font-bold text-foreground font-serif-custom tracking-wide">Register New Branch</h3>
-                <button type="button" onclick="document.getElementById('branchModal').classList.add('hidden')" class="text-muted-fg hover:text-foreground text-2xl leading-none">&times;</button>
+    <!-- Register New Branch Modal -->
+    <div id="branchModal" class="fixed inset-0 bg-black/60 backdrop-blur-md z-50 hidden flex items-center justify-center p-4 transition-all duration-300">
+        <div class="bg-card rounded-2xl max-w-md w-full shadow-[0_25px_60px_-15px_rgba(30,58,40,0.3)] overflow-hidden border border-[#c8a96e]/20 flex flex-col transform scale-100 transition-all duration-300">
+            <div class="px-6 py-5 border-b border-border bg-gradient-to-r from-[#1e3a28]/5 via-[#1e3a28]/2 to-transparent flex justify-between items-center">
+                <h3 class="text-lg font-bold text-foreground font-serif-custom tracking-wide">Register New Branch</h3>
+                <button type="button" onclick="document.getElementById('branchModal').classList.add('hidden')" class="w-8 h-8 rounded-full flex items-center justify-center bg-muted/60 hover:bg-muted text-muted-fg hover:text-foreground transition-all duration-200 text-xl leading-none">&times;</button>
             </div>
-            <form action="/customer/add-branch" method="POST" onsubmit="saveEnteredQuantities()" class="p-6">
+            <form action="/customer/add-branch" method="POST" onsubmit="saveEnteredQuantities()" class="p-6 sm:p-8 space-y-5">
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-xs font-bold text-muted-fg mb-1 uppercase tracking-wider">Branch Name</label>
-                        <input type="text" name="branch_name" required placeholder="e.g. Andheri West" class="w-full bg-input border border-border rounded px-3 py-2 outline-none focus:border-primary transition">
+                        <label class="block text-xs font-bold text-muted-fg mb-1.5 uppercase tracking-wider">Branch Name</label>
+                        <input type="text" name="branch_name" required placeholder="e.g. Andheri West" class="w-full bg-[#fcfaf7] border border-border/80 focus:border-[#c8a96e] focus:ring-1 focus:ring-[#c8a96e] rounded-xl px-4 py-3 outline-none transition text-sm text-foreground placeholder:text-muted-fg/60">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-muted-fg mb-1 uppercase tracking-wider">Address</label>
-                        <textarea name="address" rows="2" required class="w-full bg-input border border-border rounded px-3 py-2 outline-none focus:border-primary transition"></textarea>
+                        <label class="block text-xs font-bold text-muted-fg mb-1.5 uppercase tracking-wider">Address</label>
+                        <textarea name="address" rows="3" required placeholder="Enter complete delivery address" class="w-full bg-[#fcfaf7] border border-border/80 focus:border-[#c8a96e] focus:ring-1 focus:ring-[#c8a96e] rounded-xl px-4 py-3 outline-none transition text-sm text-foreground placeholder:text-muted-fg/60 leading-relaxed"></textarea>
                     </div>
                 </div>
-                <div class="mt-8 flex gap-3">
-                    <button type="button" onclick="document.getElementById('branchModal').classList.add('hidden')" class="flex-1 px-4 py-2.5 border border-border text-foreground font-medium rounded hover:bg-muted transition">Cancel</button>
-                    <button type="submit" class="flex-1 px-4 py-2.5 bg-primary text-primary-fg font-medium rounded hover:bg-primary/90 transition shadow">Save Branch</button>
+                <div class="pt-4 flex gap-3">
+                    <button type="button" onclick="document.getElementById('branchModal').classList.add('hidden')" class="flex-1 px-4 py-3 border border-border text-foreground font-semibold rounded-xl hover:bg-muted/40 transition-all duration-200">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-3 bg-primary text-primary-fg font-semibold rounded-xl hover:bg-primary/95 transition-all duration-200 shadow-md hover:shadow-lg">Save Branch</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <div id="invoiceModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-card rounded-xl max-w-3xl w-full shadow-2xl overflow-hidden border border-border flex flex-col max-h-[90vh]">
-            <div class="px-6 py-4 border-b border-border bg-muted/30 flex justify-between items-center">
+    <!-- Master Purchase Order (Invoice) Modal -->
+    <div id="invoiceModal" class="fixed inset-0 bg-black/60 backdrop-blur-md z-50 hidden flex items-center justify-center p-4 transition-all duration-300">
+        <div class="bg-card rounded-2xl max-w-3xl w-full shadow-[0_25px_60px_-15px_rgba(30,58,40,0.3)] overflow-hidden border border-[#c8a96e]/20 flex flex-col max-h-[90vh] transform scale-100 transition-all duration-300">
+            <!-- Header -->
+            <div class="px-6 py-5 border-b border-border bg-gradient-to-r from-[#1e3a28]/5 via-[#1e3a28]/2 to-transparent flex justify-between items-center">
                 <div>
-                    <h3 class="font-bold text-foreground font-serif-custom tracking-wide text-lg">Master Purchase Order</h3>
-                    <p id="modal-order-id" class="text-sm font-mono text-muted-fg mt-1"></p>
+                    <h3 class="text-xl font-bold text-foreground font-serif-custom tracking-wide">Master Purchase Order</h3>
+                    <p id="modal-order-id" class="text-xs font-mono text-muted-fg mt-1"></p>
                 </div>
-                <button type="button" onclick="document.getElementById('invoiceModal').classList.add('hidden')" class="text-muted-fg hover:text-foreground text-3xl leading-none">&times;</button>
+                <button type="button" onclick="document.getElementById('invoiceModal').classList.add('hidden')" class="w-8 h-8 rounded-full flex items-center justify-center bg-muted/60 hover:bg-muted text-muted-fg hover:text-foreground transition-all duration-200 text-xl leading-none">&times;</button>
             </div>
-            <div class="p-4 sm:p-6 overflow-y-auto">
-                <div class="flex flex-col sm:flex-row justify-between gap-4 mb-6 bg-background border border-border p-4 rounded-lg">
+            
+            <!-- Body -->
+            <div class="p-6 sm:p-8 overflow-y-auto space-y-6">
+                <!-- Info Section -->
+                <div class="flex flex-col sm:flex-row justify-between gap-4 bg-[#fcfaf7] border border-border/80 p-5 rounded-2xl shadow-sm">
                     <div>
-                        <p class="text-xs text-muted-fg uppercase tracking-widest font-bold mb-1">Entity</p>
-                        <p id="modal-branch-name" class="font-bold text-foreground"></p>
-                        <p id="modal-branch-address" class="text-sm text-muted-fg mt-1"></p>
+                        <p class="text-[10px] text-muted-fg uppercase tracking-widest font-bold mb-1">Entity Details</p>
+                        <p id="modal-branch-name" class="font-bold text-foreground text-base"></p>
+                        <p id="modal-branch-address" class="text-sm text-muted-fg mt-1.5 leading-relaxed"></p>
                     </div>
-                    <div class="text-left sm:text-right">
-                        <p class="text-xs text-muted-fg uppercase tracking-widest font-bold mb-1">Status</p>
-                        <div id="modal-status"></div>
+                    <div class="text-left sm:text-right flex flex-col sm:items-end justify-between">
+                        <div>
+                            <p class="text-[10px] text-muted-fg uppercase tracking-widest font-bold mb-1">Order Status</p>
+                            <div id="modal-status" class="mt-1"></div>
+                        </div>
                     </div>
                 </div>
-                <div class="overflow-x-auto border border-border rounded-lg">
-                    <table class="w-full text-left text-sm min-w-[550px]">
-                    <thead class="bg-muted text-muted-fg">
-                        <tr>
-                            <th class="p-3 font-medium">Branch</th>
-                            <th class="p-3 font-medium">Product</th>
-                            <th class="p-3 font-medium text-center" id="modal-qty-header">Qty</th>
-                            <th class="p-3 font-medium text-right">Base Rate</th>
-                            <th class="p-3 font-medium text-right">Total (Incl. GST)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="modal-items-tbody" class="divide-y divide-border"></tbody>
-                </table>
-                <div class="mt-4 text-right pr-3">
-                    <p class="text-muted-fg text-sm">Estimated Total Amount:</p>
-                    <p id="modal-grand-total" class="text-2xl font-bold font-mono text-primary"></p>
+
+                <!-- Table Section -->
+                <div class="overflow-x-auto border border-border/80 rounded-2xl shadow-sm bg-background">
+                    <table class="w-full text-left text-sm min-w-[550px] border-collapse">
+                        <thead>
+                            <tr class="bg-muted/50 border-b border-border/85">
+                                <th class="py-3.5 px-4 font-bold text-xs uppercase tracking-wider text-muted-fg">Branch</th>
+                                <th class="py-3.5 px-4 font-bold text-xs uppercase tracking-wider text-muted-fg">Product</th>
+                                <th class="py-3.5 px-4 font-bold text-xs uppercase tracking-wider text-muted-fg text-center" id="modal-qty-header">Qty</th>
+                                <th class="py-3.5 px-4 font-bold text-xs uppercase tracking-wider text-muted-fg text-right">Base Rate</th>
+                                <th class="py-3.5 px-4 font-bold text-xs uppercase tracking-wider text-muted-fg text-right">Total (Incl. GST)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modal-items-tbody" class="divide-y divide-border/60"></tbody>
+                    </table>
+                </div>
+
+                <!-- Grand Total Card -->
+                <div class="bg-gradient-to-r from-[#1e3a28] to-[#2d563c] text-white p-5 rounded-2xl flex justify-between items-center shadow-md">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2.5 bg-white/10 rounded-xl">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#c8a96e]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs text-white/70 uppercase tracking-widest font-semibold" id="modal-grand-total-label">Estimated Total Amount</p>
+                            <p class="text-xs text-white/50">Includes all taxes and product GST margins</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p id="modal-grand-total" class="text-3xl font-extrabold font-mono text-[#c8a96e] tracking-tight"></p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Edit Order Modal -->
-    <div id="editOrderModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-card rounded-xl max-w-4xl w-full shadow-2xl overflow-hidden border border-border flex flex-col max-h-[90vh]">
-            <div class="px-6 py-4 border-b border-border bg-muted/30 flex justify-between items-center">
+    <div id="editOrderModal" class="fixed inset-0 bg-black/60 backdrop-blur-md z-50 hidden flex items-center justify-center p-4 transition-all duration-300">
+        <div class="bg-card rounded-2xl max-w-5xl w-full shadow-[0_25px_60px_-15px_rgba(30,58,40,0.3)] overflow-hidden border border-[#c8a96e]/20 flex flex-col max-h-[90vh] transform scale-100 transition-all duration-300">
+            <div class="px-6 py-5 border-b border-border bg-gradient-to-r from-[#1e3a28]/5 via-[#1e3a28]/2 to-transparent flex justify-between items-center">
                 <div>
-                    <h3 class="font-bold text-foreground font-serif-custom tracking-wide text-lg">Edit Master Purchase Order</h3>
-                    <p id="edit-modal-order-id" class="text-sm font-mono text-muted-fg mt-1"></p>
+                    <h3 class="text-xl font-bold text-foreground font-serif-custom tracking-wide">Edit Master Purchase Order</h3>
+                    <p id="edit-modal-order-id" class="text-xs font-mono text-muted-fg mt-1"></p>
                 </div>
-                <button type="button" onclick="document.getElementById('editOrderModal').classList.add('hidden')" class="text-muted-fg hover:text-foreground text-3xl leading-none">&times;</button>
+                <button type="button" onclick="document.getElementById('editOrderModal').classList.add('hidden')" class="w-8 h-8 rounded-full flex items-center justify-center bg-muted/60 hover:bg-muted text-muted-fg hover:text-foreground transition-all duration-200 text-xl leading-none">&times;</button>
             </div>
             <form id="form-edit-order" action="" method="POST" class="flex-1 flex flex-col overflow-hidden">
-                <div class="p-4 sm:p-6 overflow-y-auto flex-1">
-                    <div class="overflow-x-auto no-scrollbar border border-border rounded-lg bg-background">
-                        <table class="w-full text-left text-sm whitespace-nowrap">
-                            <thead class="bg-muted text-muted-fg uppercase tracking-wider text-xs border-b border-border">
-                                <tr>
-                                    <th class="p-4 font-bold sticky left-0 bg-muted border-r border-border z-10 w-56">Delivery Branch</th>
+                <div class="p-6 overflow-y-auto flex-1">
+                    <div class="overflow-x-auto no-scrollbar border border-border/80 rounded-2xl bg-background shadow-sm">
+                        <table class="w-full text-left text-sm whitespace-nowrap border-collapse">
+                            <thead>
+                                <tr class="bg-muted border-b border-border/80">
+                                    <th class="p-4 font-bold text-xs uppercase tracking-wider text-muted-fg sticky left-0 bg-muted border-r border-border/60 z-10 w-56">Delivery Branch</th>
                                     <% products.forEach(product => { %>
-                                        <th class="p-4 font-bold min-w-[140px]"><%= product.name %> (<%= product.unit %>)</th>
+                                        <th class="p-4 font-bold text-xs uppercase tracking-wider text-muted-fg min-w-[140px] text-center"><%= product.name %><br><span class="text-[10px] text-muted-fg/70 lowercase font-medium">(<%= product.unit %>)</span></th>
                                     <% }) %>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-border">
+                            <tbody class="divide-y divide-border/60">
                                 <% branches.forEach(branch => { %>
-                                    <tr class="hover:bg-muted/20 transition group">
-                                        <td class="p-4 sticky left-0 bg-background group-hover:bg-muted/50 border-r border-border z-10">
-                                            <span class="font-bold"><%= branch.branch_name %></span>
+                                    <tr class="hover:bg-muted/15 transition group">
+                                        <td class="p-4 sticky left-0 bg-background group-hover:bg-muted/30 border-r border-border/60 z-10">
+                                            <span class="font-bold text-foreground text-sm"><%= branch.branch_name %></span>
                                         </td>
                                         <% products.forEach(product => { %>
                                             <td class="p-3">
@@ -289,7 +314,7 @@
                                                        name="orders[b_<%= branch.id || branch.branch_id %>][p_<%= product.id %>]" 
                                                        id="edit_input_b_<%= branch.id || branch.branch_id %>_p_<%= product.id %>"
                                                        placeholder="-" 
-                                                       class="w-full bg-input border border-border focus:border-primary rounded px-3 py-2 outline-none transition font-mono text-base"
+                                                       class="w-full bg-[#fcfaf7] border border-border/80 focus:border-[#c8a96e] focus:ring-1 focus:ring-[#c8a96e] rounded-xl px-3 py-2.5 outline-none transition font-mono text-center text-sm font-semibold text-foreground placeholder:text-muted-fg/40 shadow-sm"
                                                        oninput="this.value = this.value.replace(/[^0-9.]/g, '')">
                                             </td>
                                         <% }) %>
@@ -299,9 +324,9 @@
                         </table>
                     </div>
                 </div>
-                <div class="px-6 py-4 border-t border-border bg-muted/30 flex justify-end gap-3">
-                    <button type="button" onclick="document.getElementById('editOrderModal').classList.add('hidden')" class="px-4 py-2 border border-border text-foreground font-medium rounded hover:bg-muted transition">Cancel</button>
-                    <button type="submit" class="px-6 py-2 bg-primary text-primary-fg font-medium rounded hover:bg-primary/90 transition shadow">Save Changes</button>
+                <div class="px-6 py-5 border-t border-border/80 bg-muted/20 flex justify-end gap-3">
+                    <button type="button" onclick="document.getElementById('editOrderModal').classList.add('hidden')" class="px-5 py-3 border border-border text-foreground font-semibold rounded-xl hover:bg-muted/40 transition-all duration-200">Cancel</button>
+                    <button type="submit" class="px-6 py-3 bg-primary text-primary-fg font-semibold rounded-xl hover:bg-primary/95 transition-all duration-200 shadow-md hover:shadow-lg">Save Changes</button>
                 </div>
             </form>
         </div>
@@ -364,18 +389,18 @@
                         : `${activeQty}`;
 
                     const tr = document.createElement('tr');
-                    tr.className = "hover:bg-muted/10 transition border-b border-border/50";
+                    tr.className = "hover:bg-muted/20 even:bg-[#fcfaf7]/50 transition border-b border-border/40";
                     tr.innerHTML = `
-                        <td class="p-3 font-bold text-xs text-primary uppercase tracking-wider">${item.branch_name}</td>
-                        <td class="p-3 font-medium">${item.product_name} <span class="text-xs text-muted-fg ml-1">(${item.unit})</span></td>
-                        <td class="p-3 text-center font-mono">${qtyDisplay}</td>
-                        <td class="p-3 text-right text-muted-fg font-mono">₹${basePrice.toFixed(2)}</td>
-                        <td class="p-3 text-right font-bold font-mono text-foreground">₹${rowTotal.toFixed(2)}</td>
+                        <td class="py-4 px-4 font-bold text-xs text-primary tracking-wide">${item.branch_name}</td>
+                        <td class="py-4 px-4 font-medium text-foreground">${item.product_name} <span class="text-xs text-muted-fg ml-1">(${item.unit})</span></td>
+                        <td class="py-4 px-4 text-center font-semibold font-mono">${qtyDisplay}</td>
+                        <td class="py-4 px-4 text-right text-muted-fg font-medium font-mono">₹${basePrice.toFixed(2)}</td>
+                        <td class="py-4 px-4 text-right font-bold font-mono text-primary">₹${rowTotal.toFixed(2)}</td>
                     `;
                     tbody.appendChild(tr);
                 });
 
-                document.getElementById('modal-grand-total').previousElementSibling.innerText = isOrderFulfilled ? "Final Invoice Total:" : "Estimated Total Amount:";
+                document.getElementById('modal-grand-total-label').innerText = isOrderFulfilled ? "Final Invoice Total" : "Estimated Total Amount";
                 document.getElementById('modal-grand-total').innerText = `₹${Math.round(grandTotal).toLocaleString()}`;
                 document.getElementById('invoiceModal').classList.remove('hidden');
             } catch (error) {

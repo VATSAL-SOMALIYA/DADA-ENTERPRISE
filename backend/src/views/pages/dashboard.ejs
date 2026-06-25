@@ -263,38 +263,38 @@
     </main>
 
     <!-- Fulfill Modal table scrollable wrapper for small screen responsiveness -->
-    <div id="fulfillModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-card rounded-xl max-w-3xl w-full shadow-2xl overflow-hidden border border-border flex flex-col max-h-[90vh]">
-            <div class="px-6 py-4 border-b border-border bg-muted/30 flex justify-between items-center">
+    <div id="fulfillModal" class="fixed inset-0 bg-black/60 backdrop-blur-md z-50 hidden flex items-center justify-center p-4 transition-all duration-300">
+        <div class="bg-card rounded-2xl max-w-3xl w-full shadow-[0_25px_60px_-15px_rgba(30,58,40,0.3)] overflow-hidden border border-[#c8a96e]/20 flex flex-col max-h-[90vh] transform scale-100 transition-all duration-300">
+            <div class="px-6 py-5 border-b border-border bg-gradient-to-r from-[#1e3a28]/5 via-[#1e3a28]/2 to-transparent flex justify-between items-center">
                 <div>
-                    <h3 class="font-bold text-foreground font-serif-custom tracking-wide text-lg">Order Fulfillment</h3>
-                    <p id="fulfill-order-id" class="text-sm font-mono text-muted-fg mt-1"></p>
+                    <h3 class="text-xl font-bold text-foreground font-serif-custom tracking-wide">Order Fulfillment</h3>
+                    <p id="fulfill-order-id" class="text-xs font-mono text-muted-fg mt-1"></p>
                 </div>
-                <button type="button" onclick="document.getElementById('fulfillModal').classList.add('hidden')" class="text-muted-fg hover:text-foreground text-3xl leading-none">&times;</button>
+                <button type="button" onclick="document.getElementById('fulfillModal').classList.add('hidden')" class="w-8 h-8 rounded-full flex items-center justify-center bg-muted/60 hover:bg-muted text-muted-fg hover:text-foreground transition-all duration-200 text-xl leading-none">&times;</button>
             </div>
             <form id="fulfill-form" method="POST" class="flex flex-col overflow-hidden">
-                <div class="p-4 sm:p-6 overflow-y-auto">
-                    <p class="text-sm text-muted-fg mb-4">
-                        Adjust the actual delivered quantities below. If an item was not delivered, set it to 0.<br>
-                        <span class="text-xs text-primary font-medium">Note: All values represent standard product units.</span>
-                    </p>
-                    <div class="overflow-x-auto border border-border rounded-lg">
-                        <table class="w-full text-left text-sm min-w-[500px]">
-                            <thead class="bg-muted text-muted-fg">
-                                <tr>
-                                    <th class="p-3 font-medium">Branch</th>
-                                    <th class="p-3 font-medium">Product</th>
-                                    <th class="p-3 font-medium text-center">Requested Qty</th>
-                                    <th class="p-3 font-medium text-right w-48">Actual Delivered Qty</th>
+                <div class="p-6 sm:p-8 overflow-y-auto space-y-5">
+                    <div class="bg-[#fcfaf7] border border-border/80 p-4 rounded-xl shadow-sm text-sm text-[#6b6355] leading-relaxed">
+                        Adjust the actual delivered quantities below. If an item was not delivered, set it to 0.
+                        <span class="text-xs text-primary font-bold block mt-1">Note: All values represent standard product units.</span>
+                    </div>
+                    <div class="overflow-x-auto border border-border/80 rounded-2xl shadow-sm bg-background">
+                        <table class="w-full text-left text-sm min-w-[500px] border-collapse">
+                            <thead>
+                                <tr class="bg-muted/50 border-b border-border/85">
+                                    <th class="py-3.5 px-4 font-bold text-xs uppercase tracking-wider text-muted-fg">Branch</th>
+                                    <th class="py-3.5 px-4 font-bold text-xs uppercase tracking-wider text-muted-fg">Product</th>
+                                    <th class="py-3.5 px-4 font-bold text-xs uppercase tracking-wider text-muted-fg text-center">Requested Qty</th>
+                                    <th class="py-3.5 px-4 font-bold text-xs uppercase tracking-wider text-muted-fg text-right w-48">Actual Delivered Qty</th>
                                 </tr>
                             </thead>
-                            <tbody id="fulfill-items-tbody" class="divide-y divide-border"></tbody>
+                            <tbody id="fulfill-items-tbody" class="divide-y divide-border/60"></tbody>
                         </table>
                     </div>
                 </div>
-                <div class="px-6 py-4 border-t border-border bg-muted/10 flex justify-end gap-3">
-                    <button type="button" onclick="document.getElementById('fulfillModal').classList.add('hidden')" class="px-4 py-2 border border-border rounded text-foreground hover:bg-muted transition">Cancel</button>
-                    <button type="submit" class="px-6 py-2 bg-primary text-primary-fg rounded hover:bg-primary/90 transition shadow font-bold">💾 Mark as Delivered</button>
+                <div class="px-6 py-5 border-t border-border/80 bg-muted/20 flex justify-end gap-3">
+                    <button type="button" onclick="document.getElementById('fulfillModal').classList.add('hidden')" class="px-5 py-3 border border-border text-foreground font-semibold rounded-xl hover:bg-muted/40 transition-all duration-200">Cancel</button>
+                    <button type="submit" class="px-6 py-3 bg-primary text-primary-fg font-semibold rounded-xl hover:bg-primary/95 transition-all duration-200 shadow-md hover:shadow-lg">Mark as Delivered</button>
                 </div>
             </form>
         </div>
@@ -340,17 +340,17 @@
                         : item.ordered_quantity;
 
                     const tr = document.createElement('tr');
-                    tr.className = "hover:bg-muted/10 transition";
+                    tr.className = "hover:bg-muted/20 even:bg-[#fcfaf7]/50 transition border-b border-border/40";
                     tr.innerHTML = `
-                        <td class="p-3 font-bold text-xs text-primary uppercase">${item.branch_name}</td>
-                        <td class="p-3 font-medium">${item.product_name}</td>
-                        <td class="p-3 font-mono text-muted-fg font-bold text-center">${item.ordered_quantity}</td>
-                        <td class="p-3 text-right">
+                        <td class="py-4 px-4 font-bold text-xs text-primary tracking-wide">${item.branch_name}</td>
+                        <td class="py-4 px-4 font-medium text-foreground">${item.product_name} <span class="text-xs text-muted-fg ml-1">(${item.unit})</span></td>
+                        <td class="py-4 px-4 text-center font-bold font-mono text-foreground">${item.ordered_quantity}</td>
+                        <td class="py-3 px-4 text-right">
                             <input 
                                 type="text" inputmode="decimal"
                                 name="delivered_quantities[${item.branch_id}_${item.product_id}]" 
                                 value="${defaultVal}"
-                                class="w-full bg-input border border-border rounded px-3 py-1.5 outline-none focus:border-primary text-right font-mono text-base"
+                                class="w-32 bg-[#fcfaf7] border border-border/80 focus:border-[#c8a96e] focus:ring-1 focus:ring-[#c8a96e] rounded-xl px-3 py-2 outline-none transition font-mono text-center text-sm font-semibold text-foreground placeholder:text-muted-fg/40 shadow-sm inline-block"
                                 required
                                 oninput="this.value = this.value.replace(/[^0-9.]/g, '')"
                             >

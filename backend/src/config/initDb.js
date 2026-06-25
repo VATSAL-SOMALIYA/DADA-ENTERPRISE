@@ -1,6 +1,18 @@
+/**
+ * @file initDb.js
+ * @description Auto-initialization database utility.
+ * Programmatically checks for and creates all database tables (customers, users, branches, 
+ * products, orders, order_items, and otp_verifications) if they are missing.
+ * Seeds default products, customers, branches, and admin credentials if the tables are empty.
+ */
+
 const pool = require("./db");
 const bcrypt = require("bcrypt");
 
+/**
+ * Initializes the database schema and default records.
+ * @returns {Promise<void>}
+ */
 async function initDb() {
   try {
     console.log("🛠️ Starting database schema verification...");

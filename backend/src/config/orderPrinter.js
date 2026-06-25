@@ -25,15 +25,49 @@ async function printOrderLog(orderId, actionType) {
     const order = orderQuery.rows[0];
     const itemsQuery = await pool.query(`
       SELECT oi.ordered_quantity, oi.delivered_quantity, oi.rate_at_order, oi.gst_at_order,
-             p.name AS product_name, p.unit, b.branch_name
+             oi.product_id, p.name AS product_name, p.unit, b.branch_name, b.address
       FROM order_items oi
       JOIN products p ON oi.product_id = p.id
       JOIN branches b ON oi.branch_id = b.id
-      WHERE oi.order_id = $1
-      ORDER BY b.branch_name, p.name
+      WHERE oi.order_id = $1 AND oi.ordered_quantity > 0
     `, [orderId]);
 
     const items = itemsQuery.rows;
+    const cityPriority = {
+      "surat": 1,
+      "mumbai": 2
+    };
+
+    items.sort((a, b) => {
+      // 1. Sort Tofu first
+      const isTofuA = (a.product_name || "").toLowerCase().includes("tofu");
+      const isTofuB = (b.product_name || "").toLowerCase().includes("tofu");
+      if (isTofuA !== isTofuB) {
+        return isTofuA ? -1 : 1;
+      }
+      
+      // If both are tofu or both are not tofu, sort by product_id
+      if (a.product_id !== b.product_id) {
+        return a.product_id - b.product_id;
+      }
+      
+      // 2. Sort by city/address priority (Surat first, Mumbai second, others alphabetically)
+      const cityA = (a.address || "").trim().toLowerCase();
+      const cityB = (b.address || "").trim().toLowerCase();
+      const prioA = cityPriority[cityA] || 99;
+      const prioB = cityPriority[cityB] || 99;
+      
+      if (prioA !== prioB) {
+        return prioA - prioB;
+      }
+      
+      if (cityA !== cityB) {
+        return cityA.localeCompare(cityB);
+      }
+      
+      // 3. Sort by branch name alphabetically
+      return (a.branch_name || "").localeCompare(b.branch_name || "");
+    });
 
     const timestamp = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 

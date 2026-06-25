@@ -52,7 +52,7 @@ exports.renderDashboard = async (req, res) => {
         });
       });
 
-      // Retrieve today's active order records
+      // Retrieve today's active order records plus any older pending/unfulfilled orders
       const allOrdersQuery = await pool.query(`
         SELECT o.id, o.status, o.created_at, c.company_name, STRING_AGG(DISTINCT b.branch_name, ', ') as branch_names
         FROM orders o 
@@ -60,6 +60,7 @@ exports.renderDashboard = async (req, res) => {
         JOIN branches b ON oi.branch_id = b.id
         JOIN customers c ON b.customer_id = c.id
         WHERE timezone('Asia/Kolkata', o.created_at)::date = $1::date
+           OR o.status != 'Fulfilled'
         GROUP BY o.id, o.status, o.created_at, c.company_name
         ORDER BY o.created_at DESC
       `, [todayIST]);

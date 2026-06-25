@@ -81,7 +81,7 @@
                                         <% products.forEach(product => { %>
                                             <td class="p-3">
                                                 <div class="flex items-end gap-1">
-                                                    <input type="text" inputmode="decimal" name="orders[b_<%= branch.id || branch.branch_id %>][p_<%= product.id %>]" placeholder="-" class="w-full bg-input border border-border focus:border-primary rounded px-3 py-2 outline-none transition font-mono text-base" oninput="this.value = this.value.replace(/[^0-9.]/g, '')">
+                                                    <input type="text" inputmode="decimal" name="orders[b_<%= branch.id || branch.branch_id %>][p_<%= product.id %>]" placeholder="-" class="w-full bg-input border border-border focus:border-primary rounded px-3 py-2 outline-none transition font-mono text-base" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" autocomplete="off">
                                                 </div>
                                             </td>
                                         <% }) %>
@@ -315,7 +315,8 @@
                                                        id="edit_input_b_<%= branch.id || branch.branch_id %>_p_<%= product.id %>"
                                                        placeholder="-" 
                                                        class="w-full bg-[#fcfaf7] border border-border/80 focus:border-[#c8a96e] focus:ring-1 focus:ring-[#c8a96e] rounded-xl px-3 py-2.5 outline-none transition font-mono text-center text-sm font-semibold text-foreground placeholder:text-muted-fg/40 shadow-sm"
-                                                       oninput="this.value = this.value.replace(/[^0-9.]/g, '')">
+                                                       oninput="this.value = this.value.replace(/[^0-9.]/g, '')"
+                                                       autocomplete="off">
                                             </td>
                                         <% }) %>
                                     </tr>

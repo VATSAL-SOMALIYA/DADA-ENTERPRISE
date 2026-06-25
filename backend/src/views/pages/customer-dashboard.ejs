@@ -472,6 +472,13 @@
                 sessionStorage.removeItem('saved_order_quantities');
             }
         });
+
+        // NEW: Prevent mouse wheel scroll from modifying quantity inputs
+        document.addEventListener('wheel', function(e) {
+            if (e.target.tagName === 'INPUT' && e.target.type === 'number') {
+                e.preventDefault();
+            }
+        }, { passive: false });
     </script>
 </body>
 </html>

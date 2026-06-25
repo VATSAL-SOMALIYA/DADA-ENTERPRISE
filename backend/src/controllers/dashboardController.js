@@ -140,48 +140,6 @@ exports.fulfillOrder = async (req, res) => {
         await client.query("UPDATE orders SET status = 'Fulfilled' WHERE id = $1", [orderId]);
         await client.query("COMMIT");
         
-        // Asynchronously dispatch fulfillment notification logs to customer contact
-        (async () => {
-          try {
-            // Find customer/user target phone numbers
-            const customerQuery = await pool.query(
-              `SELECT COALESCE(c.contact_number, u.contact_number) AS contact_number, c.company_name 
-               FROM orders o 
-               JOIN users u ON o.user_id = u.id 
-               LEFT JOIN customers c ON u.customer_id = c.id 
-               WHERE o.id = $1`,
-              [orderId]
-            );
-
-            const customer = customerQuery.rows[0];
-            const targetPhone = customer?.contact_number || "+91 9016764959";
-
-            // Aggregate items list containing final values
-            const itemsQuery = await pool.query(
-              `SELECT oi.delivered_quantity, p.name AS product_name, p.unit, b.branch_name 
-               FROM order_items oi 
-               JOIN products p ON oi.product_id = p.id 
-               JOIN branches b ON oi.branch_id = b.id 
-               WHERE oi.order_id = $1 
-               ORDER BY b.branch_name, p.name`,
-              [orderId]
-            );
-
-            const itemsSummary = itemsQuery.rows
-              .map(item => `• ${item.branch_name} - ${item.product_name}: ${item.delivered_quantity} ${item.unit}`)
-              .join("\n");
-
-            const { sendSms, sendWhatsapp } = require("../config/notificationService");
-            const smsMessage = `DADA Enterprise: Order (ID: ${orderId}) has been processed!\nDelivered quantities:\n${itemsSummary}`;
-            const whatsappMessage = `🔔 *Order Fulfillment Update*\n\nYour order *ID: ${orderId}* has been processed!\n\n*Delivered Quantities*:\n${itemsSummary}\n\nThank you for doing business with us!`;
-
-            await sendSms(targetPhone, smsMessage);
-            await sendWhatsapp(targetPhone, whatsappMessage);
-          } catch (err) {
-            console.error("Failed to send customer notification:", err);
-          }
-        })();
-
         res.redirect("/dashboard"); 
     } catch (err) {
         await client.query("ROLLBACK");

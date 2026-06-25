@@ -22,7 +22,6 @@
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^9.0.1",
     "pg": "^8.21.0",
-    "tailwindcss": "^4.3.1",
-    "twilio": "^6.0.2"
+    "tailwindcss": "^4.3.1"
   }
 }

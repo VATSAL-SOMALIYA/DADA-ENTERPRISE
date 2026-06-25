@@ -105,30 +105,6 @@ exports.placeOrder = async (req, res) => {
 
     // 6. Commit the entire transaction
     await client.query("COMMIT");
-    
-    // 7. Dispatch order alert notifications asynchronously to avoid blocking user response
-    (async () => {
-      try {
-        const customerRes = await pool.query("SELECT company_name FROM customers WHERE id = $1", [req.user.customer_id]);
-        const customerName = customerRes.rows[0]?.company_name || "Unknown Customer";
-        
-        // Retrieve admin contact numbers from the system (users with no customer_id)
-        const adminsQuery = await pool.query("SELECT contact_number FROM users WHERE customer_id IS NULL");
-        const adminNumbers = adminsQuery.rows.map(r => r.contact_number).filter(Boolean);
-        if (adminNumbers.length === 0) adminNumbers.push("+91 9016764959");
-
-        const { sendSms, sendWhatsapp } = require("../config/notificationService");
-        const smsMessage = `Notice: A new order (ID: ${masterOrderId}) has been placed today by ${customerName}.`;
-        const whatsappMessage = `*New Order Alert*\n\nOrder ID: *${masterOrderId}*\nCustomer: *${customerName}*\nStatus: *Placed for today*`;
-
-        for (const number of adminNumbers) {
-          await sendSms(number, smsMessage);
-          await sendWhatsapp(number, whatsappMessage);
-        }
-      } catch (err) {
-        console.error("Failed to send admin notification:", err);
-      }
-    })();
 
     res.redirect("/dashboard");
   } catch (err) {
@@ -311,45 +287,6 @@ exports.editOrder = async (req, res) => {
 
     // 7. Commit the transaction
     await client.query("COMMIT");
-
-    // 8. Dispatch notification alerts asynchronously
-    (async () => {
-      try {
-        const customerRes = await pool.query("SELECT company_name FROM customers WHERE id = $1", [req.user.customer_id]);
-        const customerName = customerRes.rows[0]?.company_name || "Unknown Customer";
-
-        // Retrieve admin contact numbers from database (users with no customer_id)
-        const adminsQuery = await pool.query("SELECT contact_number FROM users WHERE customer_id IS NULL");
-        const adminNumbers = adminsQuery.rows.map(r => r.contact_number).filter(Boolean);
-        if (adminNumbers.length === 0) adminNumbers.push("+91 9016764959");
-
-        // Fetch updated items summary
-        const itemsQuery = await pool.query(
-          `SELECT oi.ordered_quantity, p.name AS product_name, p.unit, b.branch_name 
-           FROM order_items oi 
-           JOIN products p ON oi.product_id = p.id 
-           JOIN branches b ON oi.branch_id = b.id 
-           WHERE oi.order_id = $1 
-           ORDER BY b.branch_name, p.name`,
-          [id]
-        );
-
-        const itemsSummary = itemsQuery.rows
-          .map(item => `• ${item.branch_name} - ${item.product_name}: ${item.ordered_quantity} ${item.unit}`)
-          .join("\n");
-
-        const { sendSms, sendWhatsapp } = require("../config/notificationService");
-        const smsMessage = `Notice: Order ID ORD-${String(id).padStart(4, '0')} has been EDITED by ${customerName}.\nNew quantities:\n${itemsSummary}`;
-        const whatsappMessage = `*Order Edited Alert*\n\nOrder ID: *ORD-${String(id).padStart(4, '0')}*\nCustomer: *${customerName}*\n\n*Updated Quantities*:\n${itemsSummary}`;
-
-        for (const number of adminNumbers) {
-          await sendSms(number, smsMessage);
-          await sendWhatsapp(number, whatsappMessage);
-        }
-      } catch (err) {
-        console.error("Failed to send edit notification:", err);
-      }
-    })();
 
     res.redirect("/dashboard");
   } catch (err) {

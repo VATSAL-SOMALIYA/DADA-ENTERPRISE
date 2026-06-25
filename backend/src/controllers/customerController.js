@@ -39,7 +39,7 @@ exports.addBranch = async (req, res) => {
  * @returns {Promise<void>}
  */
 exports.placeOrder = async (req, res) => {
-  const { orders } = req.body;
+  const { orders, order_date } = req.body;
   const userId = req.user.id;
   
   if (!orders || typeof orders !== "object") {
@@ -61,10 +61,19 @@ exports.placeOrder = async (req, res) => {
     );
 
     // 3. Create the master order record with 'Pending' status
-    const orderResult = await client.query(
-      "INSERT INTO orders (user_id, status) VALUES ($1, 'Pending') RETURNING id",
-      [userId],
-    );
+    let orderResult;
+    if (order_date) {
+      const orderTimestamp = `${order_date} 11:00:00`;
+      orderResult = await client.query(
+        "INSERT INTO orders (user_id, status, created_at) VALUES ($1, 'Pending', $2) RETURNING id",
+        [userId, orderTimestamp],
+      );
+    } else {
+      orderResult = await client.query(
+        "INSERT INTO orders (user_id, status) VALUES ($1, 'Pending') RETURNING id",
+        [userId],
+      );
+    }
     const masterOrderId = orderResult.rows[0].id;
     let itemsAdded = 0;
 

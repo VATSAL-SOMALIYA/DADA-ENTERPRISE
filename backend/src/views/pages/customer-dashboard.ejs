@@ -81,7 +81,7 @@
                                         <% products.forEach(product => { %>
                                             <td class="p-3">
                                                 <div class="flex items-end gap-1">
-                                                    <input type="number" name="orders[b_<%= branch.id || branch.branch_id %>][p_<%= product.id %>]" step="0.01" min="0" placeholder="-" class="w-full bg-input border border-border focus:border-primary rounded px-3 py-2 outline-none transition font-mono text-base">
+                                                    <input type="text" inputmode="decimal" name="orders[b_<%= branch.id || branch.branch_id %>][p_<%= product.id %>]" placeholder="-" class="w-full bg-input border border-border focus:border-primary rounded px-3 py-2 outline-none transition font-mono text-base" oninput="this.value = this.value.replace(/[^0-9.]/g, '')">
                                                 </div>
                                             </td>
                                         <% }) %>
@@ -284,13 +284,13 @@
                                         </td>
                                         <% products.forEach(product => { %>
                                             <td class="p-3">
-                                                <input type="number" 
+                                                <input type="text" 
+                                                       inputmode="decimal" 
                                                        name="orders[b_<%= branch.id || branch.branch_id %>][p_<%= product.id %>]" 
                                                        id="edit_input_b_<%= branch.id || branch.branch_id %>_p_<%= product.id %>"
-                                                       step="0.01" 
-                                                       min="0" 
                                                        placeholder="-" 
-                                                       class="w-full bg-input border border-border focus:border-primary rounded px-3 py-2 outline-none transition font-mono text-base">
+                                                       class="w-full bg-input border border-border focus:border-primary rounded px-3 py-2 outline-none transition font-mono text-base"
+                                                       oninput="this.value = this.value.replace(/[^0-9.]/g, '')">
                                             </td>
                                         <% }) %>
                                     </tr>
@@ -402,7 +402,7 @@
                 document.getElementById('edit-modal-order-id').innerText = `ORD-${String(order.id).padStart(4, '0')} • Edit requested quantities`;
 
                 // Clear all input fields first
-                const inputs = document.querySelectorAll('#form-edit-order input[type="number"]');
+                const inputs = document.querySelectorAll('#form-edit-order input[type="text"]');
                 inputs.forEach(input => input.value = '');
 
                 // Populate inputs with ordered quantities
@@ -445,7 +445,7 @@
         // NEW: Saves current input quantities to sessionStorage before branch registration submission
         function saveEnteredQuantities() {
             const quantities = {};
-            const inputs = document.querySelectorAll('#section-order input[type="number"]');
+            const inputs = document.querySelectorAll('#section-order input[type="text"]');
             inputs.forEach(input => {
                 if (input.value) {
                     quantities[input.name] = input.value;
@@ -472,13 +472,6 @@
                 sessionStorage.removeItem('saved_order_quantities');
             }
         });
-
-        // NEW: Prevent mouse wheel scroll from modifying quantity inputs
-        document.addEventListener('wheel', function(e) {
-            if (e.target.tagName === 'INPUT' && e.target.type === 'number') {
-                e.preventDefault();
-            }
-        }, { passive: false });
     </script>
 </body>
 </html>

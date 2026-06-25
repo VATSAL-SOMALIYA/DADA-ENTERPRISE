@@ -347,11 +347,12 @@
                         <td class="p-3 font-mono text-muted-fg font-bold text-center">${item.ordered_quantity}</td>
                         <td class="p-3 text-right">
                             <input 
-                                type="number" step="0.001" min="0"
+                                type="text" inputmode="decimal"
                                 name="delivered_quantities[${item.branch_id}_${item.product_id}]" 
                                 value="${defaultVal}"
                                 class="w-full bg-input border border-border rounded px-3 py-1.5 outline-none focus:border-primary text-right font-mono text-base"
                                 required
+                                oninput="this.value = this.value.replace(/[^0-9.]/g, '')"
                             >
                         </td>
                     `;
@@ -363,13 +364,6 @@
                 alert("Could not load order details.");
             }
         }
-
-        // NEW: Prevent mouse wheel scroll from modifying quantity inputs
-        document.addEventListener('wheel', function(e) {
-            if (e.target.tagName === 'INPUT' && e.target.type === 'number') {
-                e.preventDefault();
-            }
-        }, { passive: false });
     </script>
 </body>
 </html>

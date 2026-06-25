@@ -29,7 +29,7 @@ async function sendMail(to, subject, text) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: process.env.SMTP_FROM || 'onboarding@resend.dev',
+          from: process.env.RESEND_FROM || '"DADA Enterprise" <onboarding@resend.dev>',
           to: to,
           subject: subject,
           text: text,

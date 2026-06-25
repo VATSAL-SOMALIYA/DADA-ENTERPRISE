@@ -74,8 +74,9 @@ exports.placeOrder = async (req, res) => {
       if (!products) continue;
       const branchId = prefixedBranchId.replace("b_", "");
       
-      for (const [productId, quantity] of Object.entries(products)) {
+      for (const [prefixedProductId, quantity] of Object.entries(products)) {
         if (quantity && parseFloat(quantity) > 0) {
+          const productId = prefixedProductId.replace("p_", "");
           const prod = productPrices[productId];
           if (prod) {
             await client.query(
@@ -217,4 +218,145 @@ exports.deleteBranch = async (req, res) => {
     }
     res.status(500).send("Server Error deleting branch");
   }
-};
+};
+
+/**
+ * Edits an existing master order (requested quantities).
+ * Only allowed before the order is fulfilled.
+ * 
+ * @param {import("express").Request} req - Express request object.
+ * @param {import("express").Response} res - Express response.
+ * @returns {Promise<void>}
+ */
+exports.editOrder = async (req, res) => {
+  const { id } = req.params;
+  const { orders } = req.body;
+  const userId = req.user.id;
+
+  if (!orders || typeof orders !== "object") {
+    return res.status(400).send("Invalid data.");
+  }
+
+  const client = await pool.connect();
+  try {
+    // 1. Begin database transaction
+    await client.query("BEGIN");
+
+    // 2. Fetch the order and verify ownership & status
+    const orderRes = await client.query("SELECT * FROM orders WHERE id = $1", [id]);
+    if (orderRes.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).send("Order not found.");
+    }
+
+    const order = orderRes.rows[0];
+    if (order.user_id !== userId) {
+      await client.query("ROLLBACK");
+      return res.status(403).send("Unauthorized to edit this order.");
+    }
+
+    if (order.status === "Fulfilled") {
+      await client.query("ROLLBACK");
+      return res.status(400).send("Fulfilled orders cannot be edited.");
+    }
+
+    // 3. Fetch standard product prices for rate & gst calculations
+    const prodDataResult = await client.query(
+      "SELECT id, base_rate, gst_percentage FROM products",
+    );
+    const productPrices = {};
+    prodDataResult.rows.forEach(
+      (p) => (productPrices[p.id] = { rate: p.base_rate, gst: p.gst_percentage }),
+    );
+
+    // 4. Delete existing order items for this order
+    await client.query("DELETE FROM order_items WHERE order_id = $1", [id]);
+
+    let itemsAdded = 0;
+
+    // 5. Insert updated order items
+    for (const [prefixedBranchId, products] of Object.entries(orders)) {
+      if (!products) continue;
+      const branchId = prefixedBranchId.replace("b_", "");
+
+      for (const [prefixedProductId, quantity] of Object.entries(products)) {
+        if (quantity && parseFloat(quantity) > 0) {
+          const productId = prefixedProductId.replace("p_", "");
+          const prod = productPrices[productId];
+          if (prod) {
+            await client.query(
+              `INSERT INTO order_items (order_id, branch_id, product_id, ordered_quantity, rate_at_order, gst_at_order) 
+              VALUES ($1, $2, $3, $4, $5, $6)`,
+              [
+                id,
+                branchId,
+                productId,
+                parseFloat(quantity),
+                prod.rate,
+                prod.gst,
+              ],
+            );
+            itemsAdded++;
+          }
+        }
+      }
+    }
+
+    // 6. If no items were added with quantity > 0, we delete the master order record
+    if (itemsAdded === 0) {
+      await client.query("DELETE FROM orders WHERE id = $1", [id]);
+      await client.query("COMMIT");
+      return res.redirect("/dashboard");
+    }
+
+    // 7. Commit the transaction
+    await client.query("COMMIT");
+
+    // 8. Dispatch notification alerts asynchronously
+    (async () => {
+      try {
+        const customerRes = await pool.query("SELECT company_name FROM customers WHERE id = $1", [req.user.customer_id]);
+        const customerName = customerRes.rows[0]?.company_name || "Unknown Customer";
+
+        // Retrieve admin contact numbers from database (users with no customer_id)
+        const adminsQuery = await pool.query("SELECT contact_number FROM users WHERE customer_id IS NULL");
+        const adminNumbers = adminsQuery.rows.map(r => r.contact_number).filter(Boolean);
+        if (adminNumbers.length === 0) adminNumbers.push("+91 9016764959");
+
+        // Fetch updated items summary
+        const itemsQuery = await pool.query(
+          `SELECT oi.ordered_quantity, p.name AS product_name, p.unit, b.branch_name 
+           FROM order_items oi 
+           JOIN products p ON oi.product_id = p.id 
+           JOIN branches b ON oi.branch_id = b.id 
+           WHERE oi.order_id = $1 
+           ORDER BY b.branch_name, p.name`,
+          [id]
+        );
+
+        const itemsSummary = itemsQuery.rows
+          .map(item => `• ${item.branch_name} - ${item.product_name}: ${item.ordered_quantity} ${item.unit}`)
+          .join("\n");
+
+        const { sendSms, sendWhatsapp } = require("../config/notificationService");
+        const smsMessage = `Notice: Order ID ORD-${String(id).padStart(4, '0')} has been EDITED by ${customerName}.\nNew quantities:\n${itemsSummary}`;
+        const whatsappMessage = `*Order Edited Alert*\n\nOrder ID: *ORD-${String(id).padStart(4, '0')}*\nCustomer: *${customerName}*\n\n*Updated Quantities*:\n${itemsSummary}`;
+
+        for (const number of adminNumbers) {
+          await sendSms(number, smsMessage);
+          await sendWhatsapp(number, whatsappMessage);
+        }
+      } catch (err) {
+        console.error("Failed to send edit notification:", err);
+      }
+    })();
+
+    res.redirect("/dashboard");
+  } catch (err) {
+    if (client) await client.query("ROLLBACK");
+    console.error("Edit Order Error:", err);
+    res.status(500).send("Server Error editing order.");
+  } finally {
+    if (client) client.release();
+  }
+};

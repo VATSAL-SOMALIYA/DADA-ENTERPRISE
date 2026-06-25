@@ -81,7 +81,7 @@
                                         <% products.forEach(product => { %>
                                             <td class="p-3">
                                                 <div class="flex items-end gap-1">
-                                                    <input type="number" name="orders[b_<%= branch.id || branch.branch_id %>][<%= product.id %>]" step="0.01" min="0" placeholder="-" class="w-full bg-input border border-border focus:border-primary rounded px-3 py-2 outline-none transition font-mono text-base">
+                                                    <input type="number" name="orders[b_<%= branch.id || branch.branch_id %>][p_<%= product.id %>]" step="0.01" min="0" placeholder="-" class="w-full bg-input border border-border focus:border-primary rounded px-3 py-2 outline-none transition font-mono text-base">
                                                 </div>
                                             </td>
                                         <% }) %>
@@ -129,8 +129,11 @@
                                             <span class="px-3 py-1 bg-yellow-100 text-yellow-800 border border-yellow-200 rounded-full text-xs font-bold"><%= order.status %></span>
                                         <% } %>
                                     </td>
-                                    <td class="p-4 text-right">
+                                    <td class="p-4 text-right flex justify-end gap-2">
                                         <button onclick="viewOrderDetails('<%= order.id %>')" class="text-primary hover:text-accent font-medium text-sm border border-primary/20 hover:border-accent bg-primary/5 px-3 py-1.5 rounded transition">👁️ View Items</button>
+                                        <% if (order.status !== 'Fulfilled') { %>
+                                            <button onclick="editOrder('<%= order.id %>')" class="text-white hover:bg-accent/90 font-medium text-sm bg-accent px-3 py-1.5 rounded transition shadow-sm">✏️ Edit</button>
+                                        <% } %>
                                     </td>
                                 </tr>
                             <% }) %>
@@ -251,6 +254,59 @@
         </div>
     </div>
 
+    <!-- Edit Order Modal -->
+    <div id="editOrderModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-card rounded-xl max-w-4xl w-full shadow-2xl overflow-hidden border border-border flex flex-col max-h-[90vh]">
+            <div class="px-6 py-4 border-b border-border bg-muted/30 flex justify-between items-center">
+                <div>
+                    <h3 class="font-bold text-foreground font-serif-custom tracking-wide text-lg">Edit Master Purchase Order</h3>
+                    <p id="edit-modal-order-id" class="text-sm font-mono text-muted-fg mt-1"></p>
+                </div>
+                <button type="button" onclick="document.getElementById('editOrderModal').classList.add('hidden')" class="text-muted-fg hover:text-foreground text-3xl leading-none">&times;</button>
+            </div>
+            <form id="form-edit-order" action="" method="POST" class="flex-1 flex flex-col overflow-hidden">
+                <div class="p-4 sm:p-6 overflow-y-auto flex-1">
+                    <div class="overflow-x-auto border border-border rounded-lg bg-background">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-muted text-muted-fg uppercase tracking-wider text-xs border-b border-border">
+                                <tr>
+                                    <th class="p-4 font-bold sticky left-0 bg-muted border-r border-border z-10 w-56">Delivery Branch</th>
+                                    <% products.forEach(product => { %>
+                                        <th class="p-4 font-bold min-w-[140px]"><%= product.name %> (<%= product.unit %>)</th>
+                                    <% }) %>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-border">
+                                <% branches.forEach(branch => { %>
+                                    <tr class="hover:bg-muted/20 transition group">
+                                        <td class="p-4 sticky left-0 bg-background group-hover:bg-muted/50 border-r border-border z-10">
+                                            <span class="font-bold"><%= branch.branch_name %></span>
+                                        </td>
+                                        <% products.forEach(product => { %>
+                                            <td class="p-3">
+                                                <input type="number" 
+                                                       name="orders[b_<%= branch.id || branch.branch_id %>][p_<%= product.id %>]" 
+                                                       id="edit_input_b_<%= branch.id || branch.branch_id %>_p_<%= product.id %>"
+                                                       step="0.01" 
+                                                       min="0" 
+                                                       placeholder="-" 
+                                                       class="w-full bg-input border border-border focus:border-primary rounded px-3 py-2 outline-none transition font-mono text-base">
+                                            </td>
+                                        <% }) %>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="px-6 py-4 border-t border-border bg-muted/30 flex justify-end gap-3">
+                    <button type="button" onclick="document.getElementById('editOrderModal').classList.add('hidden')" class="px-4 py-2 border border-border text-foreground font-medium rounded hover:bg-muted transition">Cancel</button>
+                    <button type="submit" class="px-6 py-2 bg-primary text-primary-fg font-medium rounded hover:bg-primary/90 transition shadow">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         function switchTab(tabId) {
             document.getElementById('section-order').classList.add('hidden');
@@ -325,6 +381,43 @@
             } catch (error) {
                 console.error("Error:", error);
                 alert("Could not load order details.");
+            }
+        }
+
+        async function editOrder(orderId) {
+            try {
+                const response = await fetch(`/customer/order/${orderId}`);
+                if (!response.ok) throw new Error("Failed to fetch order details");
+                
+                const data = await response.json();
+                const order = data.order;
+                const items = data.items;
+
+                if (order.status === 'Fulfilled') {
+                    alert("This order is already fulfilled and cannot be edited.");
+                    return;
+                }
+
+                document.getElementById('form-edit-order').action = `/customer/edit-order/${orderId}`;
+                document.getElementById('edit-modal-order-id').innerText = `ORD-${String(order.id).padStart(4, '0')} • Edit requested quantities`;
+
+                // Clear all input fields first
+                const inputs = document.querySelectorAll('#form-edit-order input[type="number"]');
+                inputs.forEach(input => input.value = '');
+
+                // Populate inputs with ordered quantities
+                items.forEach(item => {
+                    const inputId = `edit_input_b_${item.branch_id}_p_${item.product_id}`;
+                    const input = document.getElementById(inputId);
+                    if (input) {
+                        input.value = parseFloat(item.ordered_quantity) || '';
+                    }
+                });
+
+                document.getElementById('editOrderModal').classList.remove('hidden');
+            } catch (error) {
+                console.error("Error loading order for edit:", error);
+                alert("Could not load order for editing.");
             }
         }
 

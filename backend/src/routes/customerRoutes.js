@@ -23,5 +23,8 @@ router.get("/order/:id", requireAuth, customerController.getOrderDetails);
 // POST /customer/delete-branch/:id - Deletes a specific branch (fails if the branch has past order history)
 router.post("/delete-branch/:id", requireAuth, customerController.deleteBranch);
 
+// POST /customer/edit-order/:id - Edits requested quantities for an order (restricted to ordering customer)
+router.post("/edit-order/:id", requireAuth, customerController.editOrder);
+
 module.exports = router;
 

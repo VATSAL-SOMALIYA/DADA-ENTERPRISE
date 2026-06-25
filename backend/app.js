@@ -33,7 +33,7 @@ app.set("views", path.join(__dirname, "src", "views"));
 app.use(express.static(path.join(__dirname, "public")));
 
 // Parse urlencoded request bodies (submitted via HTML form actions)
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, parseArrays: false }));
 
 // Read cookies from client requests, facilitating secure JWT session management
 app.use(cookieParser());

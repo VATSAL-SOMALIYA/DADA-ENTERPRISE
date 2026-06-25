@@ -1,7 +1,7 @@
 /**
  * @file dashboardController.js
  * @description Controller responsible for rendering portal dashboards (admin / customer specific) 
- * and processing order fulfillment updates (along with customer notifications).
+ * and processing order fulfillment updates.
  */
 
 const pool = require("../config/db");
@@ -106,7 +106,7 @@ exports.renderDashboard = async (req, res) => {
 
 /**
  * Fulfills an active order by writing actual delivered product quantities.
- * Implements transaction blocks and fires SMS/WhatsApp delivery updates to customer's contact.
+ * Implements transaction blocks.
  * 
  * @param {import("express").Request} req - Express request object.
  * @param {import("express").Response} res - Express response.

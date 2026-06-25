@@ -33,7 +33,6 @@ exports.addBranch = async (req, res) => {
 /**
  * Places a multi-branch master order containing daily product allocations.
  * Implements a database transaction to ensure order headers and items are written atomically.
- * Dispatches async Text Message (SMS) and WhatsApp notifications to system administrators.
  * 
  * @param {import("express").Request} req - Express request object.
  * @param {import("express").Response} res - Express response.

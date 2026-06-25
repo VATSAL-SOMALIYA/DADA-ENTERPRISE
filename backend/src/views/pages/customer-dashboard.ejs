@@ -47,7 +47,7 @@
                     </button>
                 </div>
                 <% if (branches && branches.length > 0 && products && products.length > 0) { %>
-                    <div class="overflow-x-auto border border-border rounded-lg bg-background">
+                    <div class="overflow-x-auto no-scrollbar border border-border rounded-lg bg-background">
                         <table class="w-full text-left text-sm whitespace-nowrap">
                             <thead class="bg-muted text-muted-fg uppercase tracking-wider text-xs border-b border-border">
                                 <tr>
@@ -193,7 +193,7 @@
                 <h3 class="font-bold text-foreground font-serif-custom tracking-wide">Register New Branch</h3>
                 <button type="button" onclick="document.getElementById('branchModal').classList.add('hidden')" class="text-muted-fg hover:text-foreground text-2xl leading-none">&times;</button>
             </div>
-            <form action="/customer/add-branch" method="POST" class="p-6">
+            <form action="/customer/add-branch" method="POST" onsubmit="saveEnteredQuantities()" class="p-6">
                 <div class="space-y-4">
                     <div>
                         <label class="block text-xs font-bold text-muted-fg mb-1 uppercase tracking-wider">Branch Name</label>
@@ -266,7 +266,7 @@
             </div>
             <form id="form-edit-order" action="" method="POST" class="flex-1 flex flex-col overflow-hidden">
                 <div class="p-4 sm:p-6 overflow-y-auto flex-1">
-                    <div class="overflow-x-auto border border-border rounded-lg bg-background">
+                    <div class="overflow-x-auto no-scrollbar border border-border rounded-lg bg-background">
                         <table class="w-full text-left text-sm whitespace-nowrap">
                             <thead class="bg-muted text-muted-fg uppercase tracking-wider text-xs border-b border-border">
                                 <tr>
@@ -441,6 +441,37 @@
                 }
             }
         }
+
+        // NEW: Saves current input quantities to sessionStorage before branch registration submission
+        function saveEnteredQuantities() {
+            const quantities = {};
+            const inputs = document.querySelectorAll('#section-order input[type="number"]');
+            inputs.forEach(input => {
+                if (input.value) {
+                    quantities[input.name] = input.value;
+                }
+            });
+            sessionStorage.setItem('saved_order_quantities', JSON.stringify(quantities));
+        }
+
+        // NEW: Restores saved quantities from sessionStorage on DOM load
+        document.addEventListener('DOMContentLoaded', () => {
+            const saved = sessionStorage.getItem('saved_order_quantities');
+            if (saved) {
+                try {
+                    const quantities = JSON.parse(saved);
+                    for (const [name, value] of Object.entries(quantities)) {
+                        const input = document.querySelector(`#section-order input[name="${name}"]`);
+                        if (input) {
+                            input.value = value;
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error restoring quantities:", e);
+                }
+                sessionStorage.removeItem('saved_order_quantities');
+            }
+        });
     </script>
 </body>
 </html>

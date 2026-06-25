@@ -140,6 +140,10 @@ exports.fulfillOrder = async (req, res) => {
         await client.query("UPDATE orders SET status = 'Fulfilled' WHERE id = $1", [orderId]);
         await client.query("COMMIT");
         
+        // Print order list to console log
+        const { printOrderLog } = require("../config/orderPrinter");
+        printOrderLog(orderId, "FULFILLED").catch(err => console.error("Printer error:", err));
+
         res.redirect("/dashboard"); 
     } catch (err) {
         await client.query("ROLLBACK");

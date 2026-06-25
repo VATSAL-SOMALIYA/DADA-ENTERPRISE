@@ -105,6 +105,10 @@ exports.placeOrder = async (req, res) => {
     // 6. Commit the entire transaction
     await client.query("COMMIT");
 
+    // Print order list to console log
+    const { printOrderLog } = require("../config/orderPrinter");
+    printOrderLog(masterOrderId, "PLACED").catch(err => console.error("Printer error:", err));
+
     res.redirect("/dashboard");
   } catch (err) {
     if (client) await client.query("ROLLBACK");
@@ -286,6 +290,10 @@ exports.editOrder = async (req, res) => {
 
     // 7. Commit the transaction
     await client.query("COMMIT");
+
+    // Print order list to console log
+    const { printOrderLog } = require("../config/orderPrinter");
+    printOrderLog(id, "EDITED").catch(err => console.error("Printer error:", err));
 
     res.redirect("/dashboard");
   } catch (err) {

@@ -153,11 +153,11 @@ function isPasswordStrong(password) {
  * @returns {Promise<void>}
  */
 exports.handleRegister = async (req, res) => {
-  const { company_name, email, password, role, security_question, security_answer } = req.body;
+  const { company_name, email, password, role, security_question, security_answer, gstin } = req.body;
 
   const isRegisteringAdmin = (role === "admin");
 
-  if ((!isRegisteringAdmin && !company_name) || !email || !password || !security_question || !security_answer) {
+  if ((!isRegisteringAdmin && (!company_name || !gstin)) || !email || !password || !security_question || !security_answer) {
     return res.render("pages/login", { error: "All fields are required.", activeTab: "register" });
   }
 
@@ -195,8 +195,8 @@ exports.handleRegister = async (req, res) => {
     } else {
       // Direct Customer registration
       const insertCustomer = await pool.query(
-        "INSERT INTO customers (company_name, contact_number) VALUES ($1, $2) RETURNING id",
-        [company_name, "+91 9016764959"]
+        "INSERT INTO customers (company_name, gstin, contact_number) VALUES ($1, $2, $3) RETURNING id",
+        [company_name, gstin.trim(), "+91 9016764959"]
       );
       customerId = insertCustomer.rows[0].id;
 

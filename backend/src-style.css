@@ -46,3 +46,13 @@ body {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* Hide number input spinners (up/down arrows) */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}

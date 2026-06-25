@@ -3,6 +3,19 @@ const initDb = require("./src/config/initDb");
 
 async function seedTestData() {
   await initDb();
+
+  // Guard: check if there are existing orders to prevent overwriting/deleting live data
+  try {
+    const orderCheck = await pool.query("SELECT COUNT(*) FROM orders");
+    if (parseInt(orderCheck.rows[0].count) > 0) {
+      console.log("⚠️ Orders already exist in the database. Skipping seeding to prevent data loss.");
+      process.exit(0);
+    }
+  } catch (err) {
+    console.error("❌ Error checking existing orders:", err);
+    process.exit(1);
+  }
+
   console.log("Cleaning existing orders data...");
   try {
     await pool.query("BEGIN");

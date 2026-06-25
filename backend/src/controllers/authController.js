@@ -18,6 +18,15 @@ const dns = require("dns").promises;
  * @returns {void}
  */
 exports.renderLogin = (req, res) => {
+  const token = req.cookies.token;
+  if (token) {
+    try {
+      jwt.verify(token, process.env.JWT_SECRET || "fallback_secret_key");
+      return res.redirect("/dashboard");
+    } catch (err) {
+      res.clearCookie("token");
+    }
+  }
   res.render("pages/login", { error: null });
 };
 
@@ -54,14 +63,15 @@ exports.handleLogin = async (req, res) => {
         customer_id: user.customer_id,
       },
       process.env.JWT_SECRET || "fallback_secret_key",
-      { expiresIn: "1d" },
+      { expiresIn: "365d" },
     );
 
     // 4. Issue the token as a secure, HTTP-only cookie
     res.cookie("token", token, {
       httpOnly: true, // prevents client-side scripting access (mitigates XSS)
-      secure: process.env.NODE_ENV === "production", // transmit only over HTTPS in production
-      maxAge: 24 * 60 * 60 * 1000, // cookie lifespan of 1 day
+      secure: false,  // Set to false to ensure session persists across HTTP and HTTPS, avoiding reverse proxy blocks
+      maxAge: 365 * 24 * 60 * 60 * 1000, // cookie lifespan of 365 days
+      sameSite: "lax",
     });
 
     res.redirect("/dashboard");
@@ -324,13 +334,14 @@ exports.handleVerifyOtp = async (req, res) => {
         const token = jwt.sign(
           { id: insertUser.rows[0].id, customer_id: null },
           process.env.JWT_SECRET || "fallback_secret_key",
-          { expiresIn: "1d" }
+          { expiresIn: "365d" }
         );
 
         res.cookie("token", token, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          maxAge: 24 * 60 * 60 * 1000,
+          secure: false, // Ensure session persists across HTTP and HTTPS
+          maxAge: 365 * 24 * 60 * 60 * 1000,
+          sameSite: "lax",
         });
 
         return res.redirect("/dashboard");
@@ -356,13 +367,14 @@ exports.handleVerifyOtp = async (req, res) => {
         const token = jwt.sign(
           { id: insertUser.rows[0].id, customer_id: customerId },
           process.env.JWT_SECRET || "fallback_secret_key",
-          { expiresIn: "1d" }
+          { expiresIn: "365d" }
         );
 
         res.cookie("token", token, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          maxAge: 24 * 60 * 60 * 1000,
+          secure: false, // Ensure session persists across HTTP and HTTPS
+          maxAge: 365 * 24 * 60 * 60 * 1000,
+          sameSite: "lax",
         });
 
         return res.redirect("/dashboard");

@@ -24,6 +24,7 @@ async function initDb() {
         company_name VARCHAR(255) NOT NULL,
         gstin VARCHAR(255) UNIQUE,
         contact_number VARCHAR(255),
+        address TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
@@ -108,6 +109,11 @@ async function initDb() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS security_answer VARCHAR(255) NOT NULL DEFAULT 'dhokla';
     `);
 
+    // Migration: ensure address column exists in customers table
+    await pool.query(`
+      ALTER TABLE customers ADD COLUMN IF NOT EXISTS address TEXT;
+    `);
+
     console.log("✅ Database tables verified.");
 
     // 2. Seed default products if products table is empty
@@ -141,21 +147,34 @@ async function initDb() {
     if (parseInt(custCheck.rows[0].count) === 0) {
       console.log("🌱 Seeding default customers...");
       const defaultCustomers = [
-        { id: 1, company_name: 'Radhe Madhav Foods', gstin: '24AAACG1234H1W2', contact_number: '9876543210' },
-        { id: 2, company_name: 'Radhe Dhokla', gstin: '24AAACG1234H1W3', contact_number: '9016764959' }
+        { id: 1, company_name: 'Radhe Madhav Foods', gstin: '24AAACG1234H1W2', contact_number: '9876543210', address: 'Shop G1 – D, Bhagwati Ashish Apartment – 1, City Light Road, S.R. NO 144, TPS:4, FP 149, Umra, Surat' },
+        { id: 2, company_name: 'Radhe Dhokla Private Limited', gstin: '24AAACG1234H1W3', contact_number: '9016764959', address: 'G-01/B, GROUND FLOOR, Atlanta Shoppers by Shree Krishna Developers, Vesu Main Road, Vesu, Surat, Surat, Gujarat, 395007' }
       ];
 
       for (const c of defaultCustomers) {
         const res = await pool.query(
-          "INSERT INTO customers (id, company_name, gstin, contact_number) VALUES ($1, $2, $3, $4) RETURNING id",
-          [c.id, c.company_name, c.gstin, c.contact_number]
+          "INSERT INTO customers (id, company_name, gstin, contact_number, address) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+          [c.id, c.company_name, c.gstin, c.contact_number, c.address]
         );
         custMap[c.id] = res.rows[0].id;
       }
       await pool.query("SELECT setval('customers_id_seq', (SELECT MAX(id) FROM customers))");
       console.log("✅ Default customers seeded.");
     } else {
-      // Map existing
+      // Map existing and ensure names/addresses are up to date
+      await pool.query(`
+        UPDATE customers 
+        SET company_name = 'Radhe Dhokla Private Limited', 
+            address = 'G-01/B, GROUND FLOOR, Atlanta Shoppers by Shree Krishna Developers, Vesu Main Road, Vesu, Surat, Surat, Gujarat, 395007'
+        WHERE id = 2;
+      `);
+      await pool.query(`
+        UPDATE customers 
+        SET company_name = 'Radhe Madhav Foods', 
+            address = 'Shop G1 – D, Bhagwati Ashish Apartment – 1, City Light Road, S.R. NO 144, TPS:4, FP 149, Umra, Surat'
+        WHERE id = 1 OR id = 4;
+      `);
+
       const existing = await pool.query("SELECT id FROM customers ORDER BY id");
       existing.rows.forEach((r, idx) => {
         custMap[idx + 1] = r.id;

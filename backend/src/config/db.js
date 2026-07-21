@@ -19,8 +19,9 @@ const poolConfig = {
 };
 
 if (process.env.DATABASE_URL) {
-  poolConfig.connectionString = process.env.DATABASE_URL;
-  // Render PostgreSQL requires SSL connection in production
+  // Strip any ?sslmode=... query parameters to prevent the pg driver from overriding our SSL settings
+  poolConfig.connectionString = process.env.DATABASE_URL.split('?')[0];
+  // Render PostgreSQL/Aiven requires SSL connection in production
   poolConfig.ssl = {
     rejectUnauthorized: false
   };

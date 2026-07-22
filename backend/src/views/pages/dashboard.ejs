@@ -334,7 +334,7 @@
                 const order = data.order;
                 const items = data.items;
 
-                document.getElementById('fulfill-form').action = `/admin/order/fulfill/${order.id}`;
+                document.getElementById('fulfill-form').action = `/dashboard/fulfill/${order.id}`;
                 document.getElementById('fulfill-order-id').innerText = `ORD-${String(order.id).padStart(4, '0')} • ${new Date(order.created_at).toLocaleDateString()}`;
 
                 const tbody = document.getElementById('fulfill-items-tbody');

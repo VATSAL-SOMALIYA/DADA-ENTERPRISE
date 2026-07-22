@@ -48,18 +48,7 @@ app.use("/dashboard", dashboardRoutes);
 // Mount customer operations (adding branches, order placements, branch removals)
 app.use("/customer", customerRoutes);
 
-// =========================================================================
-// CUSTOM ROOT/ADMIN ROUTE INTERCEPTOR
-// Explicitly handles the order fulfillment endpoint submitted by admin forms.
-// Resolves to dashboardController.fulfillOrder, protected by JWT middleware.
-// =========================================================================
-const dashboardController = require("./src/controllers/dashboardController");
-const { requireAuth } = require("./src/middleware/authMiddleware");
-app.post(
-  "/admin/order/fulfill/:id",
-  requireAuth,
-  dashboardController.fulfillOrder,
-);
+
 
 // --- START SERVER ---
 const PORT = process.env.PORT || 5000;

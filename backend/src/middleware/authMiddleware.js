@@ -39,3 +39,28 @@ exports.requireAuth = (req, res, next) => {
   }
 };
 
+/**
+ * Authorization middleware for admin-only actions.
+ * This project currently identifies an admin as a user without a linked customer
+ * (`customer_id === null`). It must be used after `requireAuth`, because
+ * `requireAuth` verifies the JWT and creates `req.user`.
+ *
+ * @param {import("express").Request} req - The verified incoming request.
+ * @param {import("express").Response} res - The outgoing response.
+ * @param {import("express").NextFunction} next - Moves to the controller when authorized.
+ * @returns {void}
+ */
+exports.requireAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.redirect("/");
+  }
+
+  // Customer accounts always have a customer ID. Only the existing admin
+  // account type has customer_id set to null.
+  if (req.user.customer_id !== null) {
+    return res.status(403).send("Access denied. Administrator permission is required.");
+  }
+
+  next();
+};
+

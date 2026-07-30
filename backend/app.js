@@ -50,6 +50,18 @@ app.use("/customer", customerRoutes);
 
 
 
+// --- HEALTH CHECK FOR KEEP-ALIVE ---
+// Runs a lightweight query (SELECT 1) to ensure the Aiven database pool stays active.
+app.get("/health", async (req, res) => {
+  try {
+    await pool.query("SELECT 1");
+    res.status(200).send("OK");
+  } catch (err) {
+    console.error("Health check failed:", err);
+    res.status(500).send("Database connection error");
+  }
+});
+
 // --- START SERVER ---
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

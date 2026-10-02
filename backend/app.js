@@ -14,6 +14,7 @@ const cookieParser = require("cookie-parser");
 const authRoutes = require("./src/routes/authRoutes");
 const customerRoutes = require("./src/routes/customerRoutes");
 const dashboardRoutes = require("./src/routes/dashboardRoutes");
+const aiRoutes = require("./src/routes/aiRoutes");
 
 const pool = require("./src/config/db");
 
@@ -32,7 +33,8 @@ app.set("views", path.join(__dirname, "src", "views"));
 // Serve static client-side resources (CSS, JS, images) from the public folder
 app.use(express.static(path.join(__dirname, "public")));
 
-// Parse urlencoded request bodies (submitted via HTML form actions)
+// Parse json and urlencoded request bodies
+app.use(express.json());
 app.use(express.urlencoded({ extended: true, parseArrays: false }));
 
 // Read cookies from client requests, facilitating secure JWT session management
@@ -47,6 +49,9 @@ app.use("/dashboard", dashboardRoutes);
 
 // Mount customer operations (adding branches, order placements, branch removals)
 app.use("/customer", customerRoutes);
+
+// Mount AI features (quantity scanning, voice ordering, morning briefing, RAG support)
+app.use("/api/ai", aiRoutes);
 
 
 

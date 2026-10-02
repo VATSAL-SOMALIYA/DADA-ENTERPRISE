@@ -27,7 +27,7 @@ async function initDb() {
         address TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
-    `);
+    `); 
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (

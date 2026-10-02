@@ -45,7 +45,7 @@ exports.placeOrder = async (req, res) => {
   if (!orders || typeof orders !== "object") {
     return res.status(400).send("Invalid data.");
   }
-
+  
   const client = await pool.connect();
   try {
     // 1. Begin atomic database transaction block

@@ -67,6 +67,25 @@
         </div>
 
         <div id="tab-orders" class="space-y-6">
+            <!-- AI Morning Dispatch Briefing Card -->
+            <div class="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 rounded-2xl p-5 shadow-sm">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-xl p-2 bg-amber-500/20 rounded-xl">🌅</span>
+                        <div>
+                            <h3 class="font-bold text-sm text-foreground">AI Morning Dispatch Briefing</h3>
+                            <p class="text-[11px] text-muted-fg">Automated demand insights &amp; dispatch highlights for today</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="loadMorningBriefing(true)" id="btn-refresh-briefing" class="text-xs bg-card border border-border hover:border-primary text-muted-fg hover:text-foreground font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                        <span id="briefing-refresh-icon">🔄</span> Refresh
+                    </button>
+                </div>
+                <div id="briefing-content" class="text-xs sm:text-sm text-foreground space-y-2 leading-relaxed bg-white/70 p-4 rounded-xl border border-border/60">
+                    <div class="animate-pulse text-muted-fg">Analyzing today's branch demands and dispatch totals...</div>
+                </div>
+            </div>
+
             <% if (Object.keys(groupedData).length === 0) { %>
                 <div class="p-8 text-center bg-card rounded-lg border border-border text-muted-fg">No active requirements found for today.</div>
             <% } else { %>
@@ -280,10 +299,21 @@
             </div>
             <form id="fulfill-form" method="POST" class="flex flex-col overflow-hidden">
                 <div class="p-6 sm:p-8 overflow-y-auto space-y-5">
-                    <div class="bg-[#fcfaf7] border border-border/80 p-4 rounded-xl shadow-sm text-sm text-[#6b6355] leading-relaxed">
-                        Adjust the actual delivered quantities below. If an item was not delivered, set it to 0.
-                        <span class="text-xs text-primary font-bold block mt-1">Note: All values represent standard product units.</span>
+                    <div class="bg-[#fcfaf7] border border-border/80 p-4 rounded-xl shadow-sm text-sm text-[#6b6355] leading-relaxed flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            Adjust the actual delivered quantities below. If an item was not delivered, set it to 0.
+                            <span class="text-xs text-primary font-bold block mt-1">Note: All values represent standard product units.</span>
+                        </div>
+                        <!-- AI Delivery Slip Scanner -->
+                        <div>
+                            <input type="file" id="fulfill-slip-file" accept="image/*" class="hidden" onchange="processFulfillScan(this)">
+                            <button type="button" onclick="document.getElementById('fulfill-slip-file').click()" class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold text-xs px-3.5 py-2 rounded-xl shadow flex items-center gap-1.5 transition">
+                                <span id="fulfill-scan-icon">📸</span>
+                                <span id="fulfill-scan-text">AI Scan Slip</span>
+                            </button>
+                        </div>
                     </div>
+                    <div id="fulfill-scan-alert" class="hidden p-3 rounded-xl text-xs font-semibold"></div>
                     <div class="overflow-x-auto border border-border/80 rounded-2xl shadow-sm bg-background">
                         <table class="w-full text-left text-sm min-w-[500px] border-collapse">
                             <thead>
@@ -302,6 +332,55 @@
                     <button type="button" onclick="document.getElementById('fulfillModal').classList.add('hidden')" class="px-5 py-3 border border-border text-foreground font-semibold rounded-xl hover:bg-muted/40 transition-all duration-200">Cancel</button>
                     <button type="submit" class="px-6 py-3 bg-primary text-primary-fg font-semibold rounded-xl hover:bg-primary/95 transition-all duration-200 shadow-md hover:shadow-lg">Mark as Delivered</button>
                 </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- FLOATING RAG AI CHAT WIDGET (ADMIN) -->
+    <div id="floating-chat-container" class="fixed bottom-6 right-6 z-40">
+        <button type="button" onclick="toggleRagChat()" class="bg-gradient-to-r from-primary to-accent hover:shadow-xl text-white font-bold p-3.5 rounded-full shadow-lg flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95">
+            <span class="text-xl">💬</span>
+            <span class="text-xs pr-1 font-semibold hidden sm:inline">Ask Dada AI</span>
+        </button>
+
+        <div id="ragChatWindow" class="hidden fixed bottom-20 right-6 w-[90vw] sm:w-96 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col z-50 max-h-[500px] h-[480px]">
+            <div class="p-4 bg-primary text-primary-fg flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <div>
+                        <h4 class="font-bold text-sm leading-tight">Dada AI Support</h4>
+                        <p class="text-[10px] opacity-80">Instant answers on rates, HSN &amp; rules</p>
+                    </div>
+                </div>
+                <button type="button" onclick="toggleRagChat()" class="text-primary-fg/80 hover:text-primary-fg text-xl leading-none">&times;</button>
+            </div>
+
+            <div id="rag-messages-box" class="flex-1 p-4 overflow-y-auto space-y-3 bg-[#fdfbf7] text-xs">
+                <div class="flex gap-2 items-start">
+                    <span class="p-1.5 bg-amber-500/10 rounded-lg text-sm">🤖</span>
+                    <div class="bg-white border border-border/80 p-3 rounded-2xl rounded-tl-none shadow-sm text-foreground max-w-[85%]">
+                        Hello Admin! Ask me anything about product rates, HSN codes, customer branches, or delivery guidelines.
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-3 py-2 bg-muted/30 border-t border-border/60 flex gap-1.5 overflow-x-auto no-scrollbar text-[11px]">
+                <button type="button" onclick="sendQuickQuestion('What is the base rate and GST of Sumul Dahi?')" class="bg-white border border-border px-2.5 py-1 rounded-full text-muted-fg hover:text-foreground hover:border-primary transition whitespace-nowrap">
+                    Dahi Rates
+                </button>
+                <button type="button" onclick="sendQuickQuestion('Which products have 0% GST?')" class="bg-white border border-border px-2.5 py-1 rounded-full text-muted-fg hover:text-foreground hover:border-primary transition whitespace-nowrap">
+                    0% GST Items
+                </button>
+                <button type="button" onclick="sendQuickQuestion('List all customer delivery branches')" class="bg-white border border-border px-2.5 py-1 rounded-full text-muted-fg hover:text-foreground hover:border-primary transition whitespace-nowrap">
+                    Branches
+                </button>
+            </div>
+
+            <form id="rag-chat-form" onsubmit="handleRagSubmit(event)" class="p-3 border-t border-border bg-card flex gap-2">
+                <input type="text" id="rag-chat-input" placeholder="Ask a question..." autocomplete="off" class="flex-1 bg-input border border-border rounded-xl px-3 py-2 text-xs outline-none focus:border-primary text-foreground">
+                <button type="submit" class="bg-primary hover:bg-primary/90 text-primary-fg px-3.5 py-2 rounded-xl text-xs font-bold transition shadow">
+                    Send
+                </button>
             </form>
         </div>
     </div>
@@ -384,7 +463,189 @@
                     }
                 });
             }
+
+            // Automatically load morning dispatch briefing
+            loadMorningBriefing();
         });
+
+        // --- AI MORNING BRIEFING LOGIC ---
+        async function loadMorningBriefing(forceRefresh = false) {
+            const contentBox = document.getElementById('briefing-content');
+            const icon = document.getElementById('briefing-refresh-icon');
+
+            if (forceRefresh) {
+                icon.classList.add('animate-spin');
+                contentBox.innerHTML = '<div class="animate-pulse text-muted-fg">Refreshing morning operations analysis...</div>';
+            }
+
+            try {
+                const response = await fetch('/api/ai/morning-briefing');
+                const data = await response.json();
+
+                if (response.ok && data.success && data.briefing) {
+                    // Format markdown bullet points to clean HTML
+                    const lines = data.briefing.split('\n').filter(l => l.trim().length > 0);
+                    let html = '<ul class="space-y-1.5">';
+                    lines.forEach(line => {
+                        const cleanLine = line.replace(/^[\*\-•]\s*/, '');
+                        html += `<li class="flex items-start gap-2"><span class="text-amber-500 font-bold">•</span><span>${cleanLine}</span></li>`;
+                    });
+                    html += '</ul>';
+                    contentBox.innerHTML = html;
+                } else {
+                    contentBox.innerHTML = '<p class="text-muted-fg">No briefing updates available at this moment.</p>';
+                }
+            } catch (err) {
+                console.error("Briefing error:", err);
+                contentBox.innerHTML = '<p class="text-xs text-muted-fg">Could not load AI briefing. Click Refresh to retry.</p>';
+            } finally {
+                icon.classList.remove('animate-spin');
+            }
+        }
+
+        // --- AI FULFILLMENT SLIP SCANNER ---
+        async function processFulfillScan(fileInput) {
+            if (!fileInput.files || !fileInput.files[0]) return;
+
+            const file = fileInput.files[0];
+            const alertBox = document.getElementById('fulfill-scan-alert');
+            const scanText = document.getElementById('fulfill-scan-text');
+            const scanIcon = document.getElementById('fulfill-scan-icon');
+
+            alertBox.classList.remove('hidden');
+            alertBox.className = "p-3 rounded-xl text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200";
+            alertBox.innerText = "Scanning delivery slip with AI...";
+
+            scanText.innerText = "Scanning...";
+            scanIcon.innerText = "⏳";
+
+            // Extract orderId from fulfill-form action URL (/dashboard/fulfill/:id)
+            const formAction = document.getElementById('fulfill-form').action;
+            const parts = formAction.split('/');
+            const orderId = parts[parts.length - 1];
+
+            const formData = new FormData();
+            formData.append('order_id', orderId);
+            formData.append('slip_file', file);
+
+            try {
+                const response = await fetch('/api/ai/scan-fulfillment', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || "Failed to scan delivery slip.");
+                }
+
+                if (!data.items || data.items.length === 0) {
+                    alertBox.className = "p-3 rounded-xl text-xs font-semibold bg-yellow-50 text-yellow-800 border border-yellow-200";
+                    alertBox.innerText = "AI could not detect quantities in the uploaded image. Please check manually.";
+                    return;
+                }
+
+                let matchCount = 0;
+                data.items.forEach(item => {
+                    const input = document.querySelector(`input[name="delivered_quantities[${item.branch_id}_${item.product_id}]"]`);
+                    if (input) {
+                        input.value = item.quantity;
+                        input.classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-50');
+                        setTimeout(() => {
+                            input.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50');
+                        }, 4000);
+                        matchCount++;
+                    }
+                });
+
+                alertBox.className = "p-3 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200";
+                alertBox.innerText = `✨ Auto-filled ${matchCount} delivered item(s) from slip photo. Review quantities below before submitting.`;
+
+            } catch (err) {
+                console.error("Scan fulfillment error:", err);
+                alertBox.className = "p-3 rounded-xl text-xs font-semibold bg-red-50 text-red-700 border border-red-200";
+                alertBox.innerText = "Error scanning slip: " + err.message;
+            } finally {
+                scanText.innerText = "AI Scan Slip";
+                scanIcon.innerText = "📸";
+                fileInput.value = "";
+            }
+        }
+
+        // --- RAG CHAT LOGIC (ADMIN) ---
+        const ragChatHistory = [];
+
+        function toggleRagChat() {
+            const chatWindow = document.getElementById('ragChatWindow');
+            chatWindow.classList.toggle('hidden');
+            if (!chatWindow.classList.contains('hidden')) {
+                document.getElementById('rag-chat-input').focus();
+            }
+        }
+
+        function sendQuickQuestion(questionText) {
+            document.getElementById('rag-chat-input').value = questionText;
+            document.getElementById('rag-chat-form').dispatchEvent(new Event('submit', { cancelable: true }));
+        }
+
+        async function handleRagSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('rag-chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const messagesBox = document.getElementById('rag-messages-box');
+
+            const userBubble = document.createElement('div');
+            userBubble.className = "flex gap-2 items-start justify-end";
+            userBubble.innerHTML = `<div class="bg-primary text-primary-fg p-3 rounded-2xl rounded-tr-none shadow-sm max-w-[85%]">${message}</div>`;
+            messagesBox.appendChild(userBubble);
+            input.value = '';
+            messagesBox.scrollTop = messagesBox.scrollHeight;
+
+            const typingBubble = document.createElement('div');
+            typingBubble.id = 'rag-typing-bubble';
+            typingBubble.className = "flex gap-2 items-start";
+            typingBubble.innerHTML = `
+                <span class="p-1.5 bg-amber-500/10 rounded-lg text-sm">🤖</span>
+                <div class="bg-white border border-border p-3 rounded-2xl rounded-tl-none text-muted-fg animate-pulse">Thinking...</div>
+            `;
+            messagesBox.appendChild(typingBubble);
+            messagesBox.scrollTop = messagesBox.scrollHeight;
+
+            try {
+                const response = await fetch('/api/ai/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message, history: ragChatHistory })
+                });
+
+                const data = await response.json();
+                const typingEl = document.getElementById('rag-typing-bubble');
+                if (typingEl) typingEl.remove();
+
+                const botReply = data.reply || "Sorry, I could not process your query.";
+
+                const botBubble = document.createElement('div');
+                botBubble.className = "flex gap-2 items-start";
+                botBubble.innerHTML = `
+                    <span class="p-1.5 bg-amber-500/10 rounded-lg text-sm">🤖</span>
+                    <div class="bg-white border border-border/80 p-3 rounded-2xl rounded-tl-none shadow-sm text-foreground max-w-[85%] leading-relaxed">
+                        ${botReply.replace(/\n/g, '<br>')}
+                    </div>
+                `;
+                messagesBox.appendChild(botBubble);
+                messagesBox.scrollTop = messagesBox.scrollHeight;
+
+                ragChatHistory.push({ role: 'user', content: message });
+                ragChatHistory.push({ role: 'model', content: botReply });
+
+            } catch (err) {
+                console.error("Chat error:", err);
+                const typingEl = document.getElementById('rag-typing-bubble');
+                if (typingEl) typingEl.remove();
+            }
+        }
     </script>
 </body>
 </html>

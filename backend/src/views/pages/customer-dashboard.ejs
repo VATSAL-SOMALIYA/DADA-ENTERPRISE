@@ -47,8 +47,8 @@
                     </button>
                 </div>
 
-                <!-- Date Selector for the Order -->
-                <div class="mb-6 flex flex-wrap gap-4 items-end">
+                <!-- Date Selector & AI Quick-Fill for the Order -->
+                <div class="mb-6 flex flex-wrap gap-4 items-end justify-between">
                     <div class="w-full sm:w-auto">
                         <label for="order_date" class="block text-xs font-bold uppercase tracking-wider text-muted-fg mb-2">Delivery Date</label>
                         <input type="date" 
@@ -57,6 +57,13 @@
                                class="bg-[#fcfaf7] border border-border/80 focus:border-[#c8a96e] focus:ring-1 focus:ring-[#c8a96e] rounded-xl px-4 py-3 outline-none transition font-semibold text-foreground text-sm w-full sm:w-48 shadow-sm"
                                required>
                     </div>
+
+                    <!-- AI Auto-Fill Trigger Button -->
+                    <button type="button" onclick="openAiOrderModal()" class="bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-white font-semibold text-sm px-5 py-3 rounded-xl shadow-md hover:shadow-lg flex items-center gap-2.5 transition-all transform hover:scale-[1.02] active:scale-[0.98]">
+                        <span class="text-lg">✨</span>
+                        <span>AI Quick-Fill Order</span>
+                        <span class="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-normal hidden sm:inline-block">Photo / Voice / WhatsApp</span>
+                    </button>
                 </div>
                 <% if (branches && branches.length > 0 && products && products.length > 0) { %>
                     <div class="overflow-x-auto no-scrollbar border border-border rounded-lg bg-background">
@@ -345,8 +352,434 @@
         </div>
     </div>
 
+    <!-- AI QUICK-FILL MODAL -->
+    <div id="aiOrderModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+        <div class="bg-card w-full max-w-xl rounded-2xl shadow-2xl border border-border flex flex-col overflow-hidden max-h-[90vh]">
+            <!-- Header -->
+            <div class="p-5 border-b border-border bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl p-2 bg-amber-500/20 rounded-xl">✨</span>
+                    <div>
+                        <h3 class="font-bold text-lg text-foreground">AI Quick-Fill Order</h3>
+                        <p class="text-xs text-muted-fg">Upload a delivery slip photo, paste WhatsApp text, or speak</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeAiOrderModal()" class="w-8 h-8 rounded-full flex items-center justify-center bg-muted hover:bg-muted/80 text-muted-fg text-xl leading-none">&times;</button>
+            </div>
+
+            <!-- Mode Selector Tabs -->
+            <div class="flex border-b border-border bg-muted/30 px-4 pt-2 gap-2 text-xs sm:text-sm font-semibold">
+                <button type="button" id="ai-tab-photo" onclick="switchAiTab('photo')" class="px-3 sm:px-4 py-2.5 border-b-2 border-primary text-primary transition flex items-center gap-1.5">
+                    📸 Slip Photo
+                </button>
+                <button type="button" id="ai-tab-text" onclick="switchAiTab('text')" class="px-3 sm:px-4 py-2.5 border-b-2 border-transparent text-muted-fg hover:text-foreground transition flex items-center gap-1.5">
+                    💬 WhatsApp Text
+                </button>
+                <button type="button" id="ai-tab-voice" onclick="switchAiTab('voice')" class="px-3 sm:px-4 py-2.5 border-b-2 border-transparent text-muted-fg hover:text-foreground transition flex items-center gap-1.5">
+                    🎙️ Voice Order
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 overflow-y-auto space-y-4">
+                <!-- Tab 1: Photo Upload -->
+                <div id="ai-pane-photo" class="space-y-3">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-muted-fg">Photo of slip / handwritten notes / WhatsApp screenshot</label>
+                    <div class="border-2 border-dashed border-border hover:border-primary/60 transition rounded-xl p-6 text-center cursor-pointer bg-muted/10 relative" onclick="document.getElementById('ai-slip-file').click()">
+                        <input type="file" id="ai-slip-file" accept="image/*" class="hidden" onchange="previewAiFile(this)">
+                        <div id="ai-upload-placeholder">
+                            <div class="text-4xl mb-2">📸</div>
+                            <p class="text-sm font-semibold text-foreground">Click to choose slip photo</p>
+                            <p class="text-xs text-muted-fg mt-1">Supports PNG, JPG, or camera photos</p>
+                        </div>
+                        <div id="ai-upload-preview" class="hidden flex flex-col items-center">
+                            <img id="ai-preview-img" class="max-h-36 rounded-lg shadow-sm border border-border mb-2 object-contain" />
+                            <span id="ai-preview-filename" class="text-xs font-mono text-muted-fg"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: WhatsApp Text -->
+                <div id="ai-pane-text" class="hidden space-y-3">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-muted-fg">Paste WhatsApp text</label>
+                    <textarea id="ai-order-text" rows="5" placeholder="Example:&#10;Adajan: 10kg tofu, 20 buttermilk&#10;Vesu: 5kg dahi, 10 taaza milk" class="w-full bg-[#fcfaf7] border border-border/80 focus:border-[#c8a96e] focus:ring-1 focus:ring-[#c8a96e] rounded-xl p-3 text-sm outline-none transition font-sans"></textarea>
+                </div>
+
+                <!-- Tab 3: Voice Note -->
+                <div id="ai-pane-voice" class="hidden space-y-4 text-center py-4">
+                    <div class="w-20 h-20 mx-auto rounded-full bg-amber-500/10 border-2 border-amber-500/30 flex items-center justify-center cursor-pointer transition-all transform hover:scale-105 active:scale-95 shadow-md" id="ai-mic-btn" onclick="toggleVoiceRecording()">
+                        <span class="text-3xl" id="ai-mic-icon">🎙️</span>
+                    </div>
+                    <div>
+                        <p id="ai-voice-status" class="text-sm font-semibold text-foreground">Tap microphone and speak</p>
+                        <p class="text-xs text-muted-fg mt-1">Speak in Gujarati, Hindi, or English (e.g. &quot;Adajan ma 10 kilo tofu ane 20 chhas&quot;)</p>
+                    </div>
+                    <div id="ai-voice-transcript-box" class="hidden bg-muted/40 p-3 rounded-xl border border-border text-left">
+                        <span class="text-[10px] uppercase font-bold text-muted-fg block mb-1">Transcript:</span>
+                        <p id="ai-voice-transcript" class="text-xs text-foreground italic"></p>
+                    </div>
+                </div>
+
+                <!-- Status Feedback -->
+                <div id="ai-scan-status" class="hidden p-3 rounded-xl text-xs font-semibold"></div>
+            </div>
+
+            <!-- Footer -->
+            <div class="p-4 border-t border-border bg-muted/20 flex justify-between items-center">
+                <span class="text-xs text-muted-fg flex items-center gap-1">⚡ Powered by Gemini AI</span>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeAiOrderModal()" class="px-4 py-2 border border-border text-sm font-semibold rounded-xl hover:bg-muted transition">Cancel</button>
+                    <button type="button" id="ai-scan-submit-btn" onclick="executeAiOrderScan()" class="px-5 py-2 bg-primary hover:bg-primary/90 text-primary-fg text-sm font-semibold rounded-xl transition shadow flex items-center gap-2">
+                        <span id="ai-scan-btn-spinner" class="hidden animate-spin">⏳</span>
+                        <span id="ai-scan-btn-text">✨ Scan &amp; Auto-Fill</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FLOATING RAG AI CHAT WIDGET -->
+    <div id="floating-chat-container" class="fixed bottom-6 right-6 z-40">
+        <!-- Floating Toggle Button -->
+        <button type="button" onclick="toggleRagChat()" class="bg-gradient-to-r from-primary to-accent hover:shadow-xl text-white font-bold p-3.5 rounded-full shadow-lg flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95">
+            <span class="text-xl">💬</span>
+            <span class="text-xs pr-1 font-semibold hidden sm:inline">Ask Dada AI</span>
+        </button>
+
+        <!-- Chat Popup Card -->
+        <div id="ragChatWindow" class="hidden fixed bottom-20 right-6 w-[90vw] sm:w-96 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col z-50 max-h-[500px] h-[480px]">
+            <!-- Header -->
+            <div class="p-4 bg-primary text-primary-fg flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <div>
+                        <h4 class="font-bold text-sm leading-tight">Dada AI Support</h4>
+                        <p class="text-[10px] opacity-80">Instant answers on rates, HSN &amp; rules</p>
+                    </div>
+                </div>
+                <button type="button" onclick="toggleRagChat()" class="text-primary-fg/80 hover:text-primary-fg text-xl leading-none">&times;</button>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="rag-messages-box" class="flex-1 p-4 overflow-y-auto space-y-3 bg-[#fdfbf7] text-xs">
+                <div class="flex gap-2 items-start">
+                    <span class="p-1.5 bg-amber-500/10 rounded-lg text-sm">🤖</span>
+                    <div class="bg-white border border-border/80 p-3 rounded-2xl rounded-tl-none shadow-sm text-foreground max-w-[85%]">
+                        Hello! Ask me anything about our dairy &amp; tofu products, GST rates, HSN codes, or delivery cutoff times.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Questions Pills -->
+            <div class="px-3 py-2 bg-muted/30 border-t border-border/60 flex gap-1.5 overflow-x-auto no-scrollbar text-[11px]">
+                <button type="button" onclick="sendQuickQuestion('What is the GST rate and HSN for Tofu?')" class="bg-white border border-border px-2.5 py-1 rounded-full text-muted-fg hover:text-foreground hover:border-primary transition whitespace-nowrap">
+                    Tofu Rate &amp; GST
+                </button>
+                <button type="button" onclick="sendQuickQuestion('When is the daily order cutoff time?')" class="bg-white border border-border px-2.5 py-1 rounded-full text-muted-fg hover:text-foreground hover:border-primary transition whitespace-nowrap">
+                    Cutoff Time
+                </button>
+                <button type="button" onclick="sendQuickQuestion('What locations do you deliver to?')" class="bg-white border border-border px-2.5 py-1 rounded-full text-muted-fg hover:text-foreground hover:border-primary transition whitespace-nowrap">
+                    Branches
+                </button>
+            </div>
+
+            <!-- Input Form -->
+            <form id="rag-chat-form" onsubmit="handleRagSubmit(event)" class="p-3 border-t border-border bg-card flex gap-2">
+                <input type="text" id="rag-chat-input" placeholder="Type your question..." autocomplete="off" class="flex-1 bg-input border border-border rounded-xl px-3 py-2 text-xs outline-none focus:border-primary text-foreground">
+                <button type="submit" class="bg-primary hover:bg-primary/90 text-primary-fg px-3.5 py-2 rounded-xl text-xs font-bold transition shadow">
+                    Send
+                </button>
+            </form>
+        </div>
+    </div>
+
     <script>
-        function switchTab(tabId) {
+        // --- AI QUICK-FILL MODAL LOGIC ---
+        let currentAiTab = 'photo';
+        let speechRecognition = null;
+        let isRecording = false;
+
+        function openAiOrderModal() {
+            document.getElementById('aiOrderModal').classList.remove('hidden');
+            document.getElementById('ai-scan-status').classList.add('hidden');
+        }
+
+        function closeAiOrderModal() {
+            document.getElementById('aiOrderModal').classList.add('hidden');
+            if (isRecording && speechRecognition) {
+                speechRecognition.stop();
+            }
+        }
+
+        function switchAiTab(tab) {
+            currentAiTab = tab;
+            ['photo', 'text', 'voice'].forEach(t => {
+                const pane = document.getElementById('ai-pane-' + t);
+                const btn = document.getElementById('ai-tab-' + t);
+                if (t === tab) {
+                    pane.classList.remove('hidden');
+                    btn.classList.add('border-primary', 'text-primary');
+                    btn.classList.remove('border-transparent', 'text-muted-fg');
+                } else {
+                    pane.classList.add('hidden');
+                    btn.classList.remove('border-primary', 'text-primary');
+                    btn.classList.add('border-transparent', 'text-muted-fg');
+                }
+            });
+        }
+
+        function previewAiFile(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                document.getElementById('ai-preview-filename').innerText = file.name;
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        document.getElementById('ai-preview-img').src = e.target.result;
+                        document.getElementById('ai-upload-preview').classList.remove('hidden');
+                        document.getElementById('ai-upload-placeholder').classList.add('hidden');
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    document.getElementById('ai-upload-preview').classList.remove('hidden');
+                    document.getElementById('ai-upload-placeholder').classList.add('hidden');
+                    document.getElementById('ai-preview-img').classList.add('hidden');
+                }
+            }
+        }
+
+        function toggleVoiceRecording() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("Speech recognition is not supported in this browser. Please use Chrome, Edge, or upload an audio/slip file.");
+                return;
+            }
+
+            if (!speechRecognition) {
+                speechRecognition = new SpeechRecognition();
+                speechRecognition.continuous = false;
+                speechRecognition.interimResults = true;
+                speechRecognition.lang = 'gu-IN, hi-IN, en-IN'; // Multi-lingual Indian speech
+
+                speechRecognition.onstart = function() {
+                    isRecording = true;
+                    document.getElementById('ai-mic-btn').classList.add('animate-pulse', 'bg-red-500/20', 'border-red-500');
+                    document.getElementById('ai-voice-status').innerText = "Listening... Speak your order now";
+                    document.getElementById('ai-voice-status').classList.add('text-red-500');
+                };
+
+                speechRecognition.onresult = function(event) {
+                    let transcript = '';
+                    for (let i = event.resultIndex; i < event.results.length; ++i) {
+                        transcript += event.results[i][0].transcript;
+                    }
+                    document.getElementById('ai-voice-transcript-box').classList.remove('hidden');
+                    document.getElementById('ai-voice-transcript').innerText = transcript;
+                };
+
+                speechRecognition.onerror = function(event) {
+                    console.error("Speech recognition error:", event.error);
+                    isRecording = false;
+                    document.getElementById('ai-mic-btn').classList.remove('animate-pulse', 'bg-red-500/20', 'border-red-500');
+                    document.getElementById('ai-voice-status').innerText = "Microphone error. Tap to retry.";
+                    document.getElementById('ai-voice-status').classList.remove('text-red-500');
+                };
+
+                speechRecognition.onend = function() {
+                    isRecording = false;
+                    document.getElementById('ai-mic-btn').classList.remove('animate-pulse', 'bg-red-500/20', 'border-red-500');
+                    document.getElementById('ai-voice-status').innerText = "Recording finished. Tap to record again or click 'Scan & Auto-Fill'.";
+                    document.getElementById('ai-voice-status').classList.remove('text-red-500');
+                };
+            }
+
+            if (isRecording) {
+                speechRecognition.stop();
+            } else {
+                speechRecognition.start();
+            }
+        }
+
+        async function executeAiOrderScan() {
+            const statusEl = document.getElementById('ai-scan-status');
+            const btnSpinner = document.getElementById('ai-scan-btn-spinner');
+            const btnText = document.getElementById('ai-scan-btn-text');
+
+            statusEl.classList.add('hidden');
+            statusEl.className = "p-3 rounded-xl text-xs font-semibold";
+
+            const formData = new FormData();
+
+            if (currentAiTab === 'photo') {
+                const fileInput = document.getElementById('ai-slip-file');
+                if (!fileInput.files || !fileInput.files[0]) {
+                    statusEl.innerText = "Please select a photo of your slip first.";
+                    statusEl.classList.add('bg-red-50', 'text-red-600', 'border', 'border-red-200');
+                    statusEl.classList.remove('hidden');
+                    return;
+                }
+                formData.append('slip_file', fileInput.files[0]);
+            } else if (currentAiTab === 'text') {
+                const textInput = document.getElementById('ai-order-text').value.trim();
+                if (!textInput) {
+                    statusEl.innerText = "Please paste your order message first.";
+                    statusEl.classList.add('bg-red-50', 'text-red-600', 'border', 'border-red-200');
+                    statusEl.classList.remove('hidden');
+                    return;
+                }
+                formData.append('order_text', textInput);
+            } else if (currentAiTab === 'voice') {
+                const transcript = document.getElementById('ai-voice-transcript').innerText.trim();
+                if (!transcript) {
+                    statusEl.innerText = "Please speak an order first before scanning.";
+                    statusEl.classList.add('bg-red-50', 'text-red-600', 'border', 'border-red-200');
+                    statusEl.classList.remove('hidden');
+                    return;
+                }
+                formData.append('order_text', transcript);
+            }
+
+            try {
+                btnSpinner.classList.remove('hidden');
+                btnText.innerText = "AI Processing...";
+                document.getElementById('ai-scan-submit-btn').disabled = true;
+
+                const response = await fetch('/api/ai/scan-order', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || "Failed to process order.");
+                }
+
+                if (!data.items || data.items.length === 0) {
+                    statusEl.innerText = "AI could not detect any matching product or branch items. Please check and try again.";
+                    statusEl.classList.add('bg-amber-50', 'text-amber-800', 'border', 'border-amber-200');
+                    statusEl.classList.remove('hidden');
+                    return;
+                }
+
+                // Auto-fill the input fields in the table!
+                let filledCount = 0;
+                data.items.forEach(item => {
+                    const input = document.querySelector(`input[name="orders[b_${item.branch_id}][p_${item.product_id}]"]`);
+                    if (input) {
+                        input.value = item.quantity;
+                        input.classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-50');
+                        setTimeout(() => {
+                            input.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50');
+                        }, 4000);
+                        filledCount++;
+                    }
+                });
+
+                statusEl.innerText = `✨ Success! Auto-filled ${filledCount} item(s) across your branches. Review the table and submit when ready!`;
+                statusEl.classList.add('bg-emerald-50', 'text-emerald-700', 'border', 'border-emerald-200');
+                statusEl.classList.remove('hidden');
+
+                setTimeout(() => {
+                    closeAiOrderModal();
+                }, 1600);
+
+            } catch (err) {
+                console.error("AI Scan Error:", err);
+                statusEl.innerText = "Error: " + err.message;
+                statusEl.classList.add('bg-red-50', 'text-red-600', 'border', 'border-red-200');
+                statusEl.classList.remove('hidden');
+            } finally {
+                btnSpinner.classList.add('hidden');
+                btnText.innerText = "✨ Scan & Auto-Fill";
+                document.getElementById('ai-scan-submit-btn').disabled = false;
+            }
+        }
+
+        // --- RAG CHAT LOGIC ---
+        const ragChatHistory = [];
+
+        function toggleRagChat() {
+            const chatWindow = document.getElementById('ragChatWindow');
+            chatWindow.classList.toggle('hidden');
+            if (!chatWindow.classList.contains('hidden')) {
+                document.getElementById('rag-chat-input').focus();
+            }
+        }
+
+        function sendQuickQuestion(questionText) {
+            document.getElementById('rag-chat-input').value = questionText;
+            document.getElementById('rag-chat-form').dispatchEvent(new Event('submit', { cancelable: true }));
+        }
+
+        async function handleRagSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('rag-chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const messagesBox = document.getElementById('rag-messages-box');
+
+            // Render User Bubble
+            const userBubble = document.createElement('div');
+            userBubble.className = "flex gap-2 items-start justify-end";
+            userBubble.innerHTML = `
+                <div class="bg-primary text-primary-fg p-3 rounded-2xl rounded-tr-none shadow-sm max-w-[85%]">
+                    ${message}
+                </div>
+            `;
+            messagesBox.appendChild(userBubble);
+            input.value = '';
+            messagesBox.scrollTop = messagesBox.scrollHeight;
+
+            // Render Temporary Typing Indicator
+            const typingBubble = document.createElement('div');
+            typingBubble.id = 'rag-typing-bubble';
+            typingBubble.className = "flex gap-2 items-start";
+            typingBubble.innerHTML = `
+                <span class="p-1.5 bg-amber-500/10 rounded-lg text-sm">🤖</span>
+                <div class="bg-white border border-border p-3 rounded-2xl rounded-tl-none text-muted-fg animate-pulse">
+                    Thinking...
+                </div>
+            `;
+            messagesBox.appendChild(typingBubble);
+            messagesBox.scrollTop = messagesBox.scrollHeight;
+
+            try {
+                const response = await fetch('/api/ai/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message, history: ragChatHistory })
+                });
+
+                const data = await response.json();
+                const typingEl = document.getElementById('rag-typing-bubble');
+                if (typingEl) typingEl.remove();
+
+                const botReply = data.reply || "Sorry, I could not process your query.";
+
+                // Render Bot Reply
+                const botBubble = document.createElement('div');
+                botBubble.className = "flex gap-2 items-start";
+                botBubble.innerHTML = `
+                    <span class="p-1.5 bg-amber-500/10 rounded-lg text-sm">🤖</span>
+                    <div class="bg-white border border-border/80 p-3 rounded-2xl rounded-tl-none shadow-sm text-foreground max-w-[85%] leading-relaxed">
+                        ${botReply.replace(/\n/g, '<br>')}
+                    </div>
+                `;
+                messagesBox.appendChild(botBubble);
+                messagesBox.scrollTop = messagesBox.scrollHeight;
+
+                // Update session history
+                ragChatHistory.push({ role: 'user', content: message });
+                ragChatHistory.push({ role: 'model', content: botReply });
+
+            } catch (err) {
+                console.error("Chat error:", err);
+                const typingEl = document.getElementById('rag-typing-bubble');
+                if (typingEl) typingEl.remove();
+            }
+        }
             document.getElementById('section-order').classList.add('hidden');
             document.getElementById('section-history').classList.add('hidden');
             document.getElementById('section-reports').classList.add('hidden');

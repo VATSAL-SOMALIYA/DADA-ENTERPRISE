@@ -1,0 +1,52 @@
+[
+  {
+    "category": "products",
+    "topic": "Tofu",
+    "content": "TOFU is sold in KG units with a base rate of ₹122.00 per KG. GST is 5.00% under HSN code 1208. It is fresh soy paneer made daily."
+  },
+  {
+    "category": "products",
+    "topic": "Sumul PB Dahi",
+    "content": "SUMUL PB DAHI is sold in KG units with a base rate of ₹76.20 per KG. GST is 5.00% under HSN code 4039010. High-quality pasteurized curd."
+  },
+  {
+    "category": "products",
+    "topic": "Sumul Buttermilk",
+    "content": "SUMUL BUTTERMILK is packaged in 500mL pouches with a base rate of ₹16.19 per pouch. GST is 5.00% under HSN code 4039010."
+  },
+  {
+    "category": "products",
+    "topic": "Sumul Slim N Trim Milk",
+    "content": "SUMUL SLIM N TRIM MILK is sold in 500mL pouches with a base rate of ₹26.00 per pouch. It is exempt from GST (0.00% GST) under HSN code 1."
+  },
+  {
+    "category": "products",
+    "topic": "Sumul Taaza",
+    "content": "SUMUL TAAZA milk is sold in 500mL pouches with a base rate of ₹29.00 per pouch. It has 0.00% GST under HSN code 1."
+  },
+  {
+    "category": "products",
+    "topic": "Sumul Lite Dahi",
+    "content": "SUMUL LITE DAHI is sold in KG units with a base rate of ₹57.14 per KG. GST is 5.00% under HSN code 4039090."
+  },
+  {
+    "category": "operations",
+    "topic": "Ordering Cutoff Time",
+    "content": "Daily branch orders must be submitted before 10:00 PM IST every evening to guarantee next-day early morning dispatch."
+  },
+  {
+    "category": "operations",
+    "topic": "Fulfillment and Delivery",
+    "content": "Delivered quantities are verified against the physical delivery challan. If delivery is short, the actual quantity is updated and billed accordingly."
+  },
+  {
+    "category": "billing",
+    "topic": "GST Invoicing",
+    "content": "Invoices are generated using verified customer GSTIN and business address. Prices and tax percentages are frozen at checkout so that future price updates never alter past bills."
+  },
+  {
+    "category": "branches",
+    "topic": "Delivery Locations",
+    "content": "Dada Enterprise currently distributes across Surat, Ahmedabad, Vadodara, Anand, Navsari, and Mumbai branches including Adajan, Vesu, Katargam, Nanpura, Icchapore, Citylight, and others."
+  }
+]

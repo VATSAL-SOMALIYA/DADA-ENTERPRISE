@@ -11,6 +11,9 @@ const { GoogleGenAI } = require("@google/genai");
 const path = require("path");
 const fs = require("fs");
 
+// Default to Google's recommended current Flash model (gemini-3.8-flash)
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+
 // Initialize Gemini Client
 const getClient = () => {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -100,7 +103,7 @@ If nothing can be extracted, respond with: []
   contents.push(userTextContent);
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: GEMINI_MODEL,
     contents: contents,
     config: {
       systemInstruction: systemPrompt,
@@ -155,7 +158,7 @@ RULES:
 `;
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: GEMINI_MODEL,
     contents: prompt,
     config: {
       temperature: 0.3
@@ -218,7 +221,7 @@ GUIDELINES:
   });
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: GEMINI_MODEL,
     contents: contents,
     config: {
       systemInstruction: systemInstruction,

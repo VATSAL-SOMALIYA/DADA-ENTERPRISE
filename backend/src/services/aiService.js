@@ -50,12 +50,21 @@ VALID PRODUCTS:
 [${productListStr}]
 
 RULES:
-- "paneer" / "soya paneer" / "tofu" maps to TOFU.
-- "chhas" / "buttermilk" maps to SUMUL BUTTERMILK.
-- "dahi" / "curd" maps to SUMUL PB DAHI.
-- "dudh" / "milk" / "taaza" maps to SUMUL TAAZA.
-- "slim" / "diet milk" maps to SUMUL SLIM N TRIM MILK.
-- Map items to closest branch name. If customer has only one branch, map all to it.
+- PRODUCT MAPPING:
+  * "paneer" / "soya paneer" / "tofu" maps to TOFU.
+  * "chhas" / "buttermilk" maps to SUMUL BUTTERMILK.
+  * "dahi" / "curd" maps to SUMUL PB DAHI (or SUMUL LITE DAHI if specifically says lite).
+  * MILK RULES:
+    - DEFAULT MILK IS SUMUL SLIM N TRIM MILK. Whenever the input mentions "milk", "dudh", "slim", "diet milk", or does not specify the milk type, map it to SUMUL SLIM N TRIM MILK.
+    - Use SUMUL TAAZA ONLY when explicitly specified by name (e.g. "taaza", "sumul taaza", "taaza milk").
+  * If no unit is mentioned, assume standard product units (KG for Tofu/Dahi, pouches for Milk/Buttermilk).
+
+- BRANCH ALIAS & LOCATION MAPPING:
+  * "Vastrapur" is also a name / alias for branch "AHM1" (or "AHM-1").
+  * "HL" and "Navrangpura" are names / aliases for branch "AHM-2" (or "AHM2").
+  * "Chandkheda" is also a name / alias for branch "AHM3" (or "AHM-3").
+  * For other branches, map to the closest matching valid branch name from the list above.
+  * If the customer has only one branch configured, map all items to that branch.
 
 OUTPUT FORMAT:
 Return ONLY a valid JSON array of objects. No markdown formatting.

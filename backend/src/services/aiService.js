@@ -11,8 +11,13 @@ const { GoogleGenAI } = require("@google/genai");
 const path = require("path");
 const fs = require("fs");
 
-// Default to Google's recommended current Flash model (gemini-3.8-flash)
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+// Candidate models in prioritized fallback cascade (tested active & supported)
+const CANDIDATE_MODELS = [
+  process.env.GEMINI_MODEL,
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-3.8-flash"
+].filter((v, i, a) => v && a.indexOf(v) === i);
 
 // Initialize Gemini Client
 const getClient = () => {
@@ -21,6 +26,23 @@ const getClient = () => {
     throw new Error("GEMINI_API_KEY is not configured in .env");
   }
   return new GoogleGenAI({ apiKey });
+};
+
+// Resilient helper to call Gemini with automatic model fallback on temporary 503 or 404
+const generateWithFallback = async (ai, options) => {
+  let lastError;
+  for (const model of CANDIDATE_MODELS) {
+    try {
+      return await ai.models.generateContent({
+        ...options,
+        model
+      });
+    } catch (err) {
+      lastError = err;
+      console.warn(`[AI Warning] Gemini model "${model}" failed (${err.message || err.status}). Falling back to next model...`);
+    }
+  }
+  throw lastError;
 };
 
 // Default fallback knowledge base
@@ -102,8 +124,7 @@ If nothing can be extracted, respond with: []
   let userTextContent = text && text.trim() ? text.trim() : "Please extract the order items from the attached image/audio.";
   contents.push(userTextContent);
 
-  const response = await ai.models.generateContent({
-    model: GEMINI_MODEL,
+  const response = await generateWithFallback(ai, {
     contents: contents,
     config: {
       systemInstruction: systemPrompt,
@@ -157,8 +178,7 @@ RULES:
 6. Return only the bullet points without introductory or concluding filler.
 `;
 
-  const response = await ai.models.generateContent({
-    model: GEMINI_MODEL,
+  const response = await generateWithFallback(ai, {
     contents: prompt,
     config: {
       temperature: 0.3
@@ -220,8 +240,7 @@ GUIDELINES:
     parts: [{ text: question }]
   });
 
-  const response = await ai.models.generateContent({
-    model: GEMINI_MODEL,
+  const response = await generateWithFallback(ai, {
     contents: contents,
     config: {
       systemInstruction: systemInstruction,

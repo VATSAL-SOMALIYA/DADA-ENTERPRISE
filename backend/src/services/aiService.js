@@ -1,23 +1,40 @@
 /**
  * @file aiService.js
- * @description AI Service for Dada Enterprise using environment-configured model.
+ * @description Universal AI Service for Dada Enterprise.
+ * Automatically supports both Google Gemini AND Groq (LLaMA / GPT-OSS) based on the provided API key.
  */
 
 const { GoogleGenAI } = require("@google/genai");
 const path = require("path");
 const fs = require("fs");
 
-// Read model dynamically from environment variable (defaults to gemini-3.5-flash-lite)
-const AI_MODEL = process.env.GEMINI_MODEL || process.env.AI_MODEL || "gemini-3.5-flash-lite";
-
-// Initialize Gemini Client
-const getClient = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not configured in .env");
-  }
-  return new GoogleGenAI({ apiKey });
+// Detect API Key & Provider
+const getApiKey = () => {
+  return process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY || "";
 };
+
+const isGroq = () => {
+  const key = getApiKey();
+  return key.trim().startsWith("gsk_");
+};
+
+// Candidate Groq models with graceful fallback if a model is unavailable
+const GROQ_MODELS = [
+  process.env.GEMINI_MODEL,
+  process.env.AI_MODEL,
+  "llama-3.3-70b-versatile",
+  "openai/gpt-oss-120b",
+  "qwen/qwen3.8-27b"
+].filter(Boolean);
+
+// Candidate Gemini models (prioritizing high-availability lite models to prevent 503 errors)
+const GEMINI_MODELS = [
+  process.env.GEMINI_MODEL,
+  process.env.AI_MODEL,
+  "gemini-3.5-flash-lite",
+  "gemini-flash-lite-latest",
+  "gemini-3.5-flash"
+].filter(Boolean);
 
 // Load company facts for the support bot
 let knowledgeBase = [];
@@ -31,11 +48,93 @@ try {
 }
 
 /**
+ * Universal caller for Groq API
+ */
+async function callGroq({ systemPrompt, userText, history = [], temperature = 0.2 }) {
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error("No API key configured in .env");
+
+  const messages = [];
+  if (systemPrompt) {
+    messages.push({ role: "system", content: systemPrompt });
+  }
+
+  // Add history
+  if (Array.isArray(history)) {
+    for (const msg of history.slice(-4)) {
+      messages.push({
+        role: msg.role === "user" ? "user" : "assistant",
+        content: msg.text || msg.content || ""
+      });
+    }
+  }
+
+  // Add current message
+  messages.push({ role: "user", content: userText });
+
+  let lastError;
+  for (const model of GROQ_MODELS) {
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error ? data.error.message : `Groq error status ${res.status}`);
+      }
+      return data.choices && data.choices[0] ? data.choices[0].message.content : "";
+    } catch (err) {
+      lastError = err;
+      console.warn(`[Groq Warning] Model "${model}" failed (${err.message}). Trying fallback...`);
+    }
+  }
+  throw lastError;
+}
+
+/**
+ * Universal caller for Google Gemini API
+ */
+async function callGemini({ systemPrompt, contents, temperature = 0.2 }) {
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error("No API key configured in .env");
+
+  const ai = new GoogleGenAI({ apiKey });
+
+  let lastError;
+  for (const model of GEMINI_MODELS) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents,
+        config: {
+          systemInstruction: systemPrompt,
+          temperature
+        }
+      });
+      return response.text ? response.text.trim() : "";
+    } catch (err) {
+      lastError = err;
+      const statusMsg = err.status || err.message || "error";
+      console.warn(`[Gemini Warning] Model "${model}" failed (${statusMsg}). Trying fallback...`);
+    }
+  }
+  throw lastError;
+}
+
+/**
  * 1. AI Quantity Extractor (Photo slip, WhatsApp text, Voice audio)
  */
 exports.extractQuantities = async ({ text, fileBuffer, mimeType, branches, products }) => {
-  const ai = getClient();
-
   const branchListStr = branches.map(b => `ID ${b.id}: "${b.branch_name}"`).join(", ");
   const productListStr = products.map(p => `ID ${p.id}: "${p.name}" (${p.unit})`).join(", ");
 
@@ -78,33 +177,36 @@ Return ONLY a valid JSON array of objects. No markdown formatting.
 If nothing detected, return: []
 `;
 
-  const contents = [];
+  let rawText = "[]";
 
-  // Add image/audio file if uploaded
-  if (fileBuffer && mimeType) {
-    contents.push({
-      inlineData: {
-        data: fileBuffer.toString("base64"),
-        mimeType: mimeType
-      }
+  if (isGroq()) {
+    const userText = text && text.trim() ? text.trim() : "Extract order items from this slip.";
+    rawText = await callGroq({
+      systemPrompt,
+      userText,
+      temperature: 0.1
+    });
+  } else {
+    const contents = [];
+    if (fileBuffer && mimeType) {
+      contents.push({
+        inlineData: {
+          data: fileBuffer.toString("base64"),
+          mimeType: mimeType
+        }
+      });
+    }
+    const userText = text && text.trim() ? text.trim() : "Extract order items from this slip.";
+    contents.push(userText);
+
+    rawText = await callGemini({
+      systemPrompt,
+      contents,
+      temperature: 0.1
     });
   }
 
-  // Add text
-  const userText = text && text.trim() ? text.trim() : "Extract order items from this slip.";
-  contents.push(userText);
-
-  const response = await ai.models.generateContent({
-    model: AI_MODEL,
-    contents: contents,
-    config: {
-      systemInstruction: systemPrompt,
-      temperature: 0.1
-    }
-  });
-
-  const rawText = response.text ? response.text.trim() : "[]";
-  const cleaned = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();
+  const cleaned = (rawText || "[]").replace(/```json/gi, "").replace(/```/g, "").trim();
 
   try {
     const data = JSON.parse(cleaned);
@@ -119,8 +221,6 @@ If nothing detected, return: []
  * 2. AI Morning Briefing for Admin Dashboard
  */
 exports.generateMorningBriefing = async ({ groupedData, orders, stats }) => {
-  const ai = getClient();
-
   const prompt = `
 You are the Operations AI for Dada Enterprise (Dairy & Tofu Distribution).
 Generate a crisp 3 to 4 bullet morning briefing for the owner.
@@ -140,23 +240,27 @@ RULES:
 6. Return only bullet points.
 `;
 
-  const response = await ai.models.generateContent({
-    model: AI_MODEL,
-    contents: prompt,
-    config: {
+  if (isGroq()) {
+    const res = await callGroq({
+      systemPrompt: "You are the Operations Director AI for Dada Enterprise.",
+      userText: prompt,
       temperature: 0.3
-    }
-  });
-
-  return response.text ? response.text.trim() : "All morning dispatches are proceeding normally.";
+    });
+    return res || "All morning dispatches are proceeding normally.";
+  } else {
+    const res = await callGemini({
+      systemPrompt: "You are the Operations Director AI for Dada Enterprise.",
+      contents: [prompt],
+      temperature: 0.3
+    });
+    return res || "All morning dispatches are proceeding normally.";
+  }
 };
 
 /**
  * 3. AI Support Chatbot for Rates and Rules
  */
 exports.askSupportBot = async ({ question, history = [] }) => {
-  const ai = getClient();
-
   const contextText = knowledgeBase
     .map(k => `[${k.category.toUpperCase()}] ${k.topic}: ${k.content}`)
     .join("\n");
@@ -174,30 +278,34 @@ GUIDELINES:
 3. Keep answers short and polite.
 `;
 
-  const contents = [];
-  if (Array.isArray(history)) {
-    const recent = history.slice(-4);
-    for (const msg of recent) {
-      contents.push({
-        role: msg.role === "user" ? "user" : "model",
-        parts: [{ text: msg.text || msg.content || "" }]
-      });
-    }
-  }
-
-  contents.push({
-    role: "user",
-    parts: [{ text: question }]
-  });
-
-  const response = await ai.models.generateContent({
-    model: AI_MODEL,
-    contents: contents,
-    config: {
-      systemInstruction: systemInstruction,
+  if (isGroq()) {
+    const res = await callGroq({
+      systemPrompt: systemInstruction,
+      userText: question,
+      history,
       temperature: 0.2
+    });
+    return res || "I am here to help with your orders and product queries.";
+  } else {
+    const contents = [];
+    if (Array.isArray(history)) {
+      for (const msg of history.slice(-4)) {
+        contents.push({
+          role: msg.role === "user" ? "user" : "model",
+          parts: [{ text: msg.text || msg.content || "" }]
+        });
+      }
     }
-  });
+    contents.push({
+      role: "user",
+      parts: [{ text: question }]
+    });
 
-  return response.text ? response.text.trim() : "I am here to help with your orders and product queries.";
+    const res = await callGemini({
+      systemPrompt: systemInstruction,
+      contents,
+      temperature: 0.2
+    });
+    return res || "I am here to help with your orders and product queries.";
+  }
 };

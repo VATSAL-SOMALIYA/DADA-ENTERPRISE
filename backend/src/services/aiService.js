@@ -1,40 +1,51 @@
 /**
  * @file aiService.js
  * @description Universal AI Service for Dada Enterprise.
- * Automatically supports both Google Gemini AND Groq (LLaMA / GPT-OSS) based on the provided API key.
+ * Reads GEMINI_API_KEY and GEMINI_MODEL directly from environment variables,
+ * automatically routing to Groq (when using Groq keys/models) or Google Gemini.
  */
 
 const { GoogleGenAI } = require("@google/genai");
 const path = require("path");
 const fs = require("fs");
 
-// Detect API Key & Provider
+// Read directly from standard GEMINI_* env variable names
 const getApiKey = () => {
-  return process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY || "";
+  return (process.env.GEMINI_API_KEY || process.env.GROQ_API_KEY || "").trim();
 };
 
+const getModelName = () => {
+  return (process.env.GEMINI_MODEL || process.env.AI_MODEL || "").trim();
+};
+
+// Check if Groq provider is active (starts with gsk_ or model is a Groq/LLaMA model)
 const isGroq = () => {
   const key = getApiKey();
-  return key.trim().startsWith("gsk_");
+  const model = getModelName().toLowerCase();
+  return key.startsWith("gsk_") || model.includes("llama") || model.includes("groq") || model.includes("qwen") || model.includes("gpt-oss");
 };
 
-// Candidate Groq models with graceful fallback if a model is unavailable
-const GROQ_MODELS = [
-  process.env.GEMINI_MODEL,
-  process.env.AI_MODEL,
-  "llama-3.3-70b-versatile",
-  "openai/gpt-oss-120b",
-  "qwen/qwen3.8-27b"
-].filter(Boolean);
+// Candidate Groq models with auto-fallback
+const getGroqModels = () => {
+  const configured = getModelName();
+  return [
+    configured,
+    "llama-3.3-70b-versatile",
+    "openai/gpt-oss-120b",
+    "qwen/qwen3.8-27b"
+  ].filter(Boolean);
+};
 
-// Candidate Gemini models (prioritizing high-availability lite models to prevent 503 errors)
-const GEMINI_MODELS = [
-  process.env.GEMINI_MODEL,
-  process.env.AI_MODEL,
-  "gemini-3.5-flash-lite",
-  "gemini-flash-lite-latest",
-  "gemini-3.5-flash"
-].filter(Boolean);
+// Candidate Gemini models with auto-fallback
+const getGeminiModels = () => {
+  const configured = getModelName();
+  return [
+    configured,
+    "gemini-3.5-flash-lite",
+    "gemini-flash-lite-latest",
+    "gemini-3.5-flash"
+  ].filter(Boolean);
+};
 
 // Load company facts for the support bot
 let knowledgeBase = [];
@@ -48,18 +59,18 @@ try {
 }
 
 /**
- * Universal caller for Groq API
+ * Executes request via Groq API (OpenAI-compatible format)
  */
 async function callGroq({ systemPrompt, userText, history = [], temperature = 0.2 }) {
   const apiKey = getApiKey();
-  if (!apiKey) throw new Error("No API key configured in .env");
+  if (!apiKey) throw new Error("GEMINI_API_KEY is not configured in .env");
 
   const messages = [];
   if (systemPrompt) {
     messages.push({ role: "system", content: systemPrompt });
   }
 
-  // Add history
+  // Include conversational turns
   if (Array.isArray(history)) {
     for (const msg of history.slice(-4)) {
       messages.push({
@@ -69,11 +80,12 @@ async function callGroq({ systemPrompt, userText, history = [], temperature = 0.
     }
   }
 
-  // Add current message
   messages.push({ role: "user", content: userText });
 
+  const models = getGroqModels();
   let lastError;
-  for (const model of GROQ_MODELS) {
+
+  for (const model of models) {
     try {
       const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
@@ -102,16 +114,17 @@ async function callGroq({ systemPrompt, userText, history = [], temperature = 0.
 }
 
 /**
- * Universal caller for Google Gemini API
+ * Executes request via Google Gemini API
  */
 async function callGemini({ systemPrompt, contents, temperature = 0.2 }) {
   const apiKey = getApiKey();
-  if (!apiKey) throw new Error("No API key configured in .env");
+  if (!apiKey) throw new Error("GEMINI_API_KEY is not configured in .env");
 
   const ai = new GoogleGenAI({ apiKey });
-
+  const models = getGeminiModels();
   let lastError;
-  for (const model of GEMINI_MODELS) {
+
+  for (const model of models) {
     try {
       const response = await ai.models.generateContent({
         model,

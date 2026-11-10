@@ -1,19 +1,14 @@
 /**
  * @file aiService.js
- * @description Simple AI Service for Dada Enterprise using Google Gemini.
+ * @description AI Service for Dada Enterprise using environment-configured model.
  */
 
 const { GoogleGenAI } = require("@google/genai");
 const path = require("path");
 const fs = require("fs");
 
-// Prioritize high-availability Lite models to completely avoid 503 "high demand" errors
-const CANDIDATE_MODELS = [
-  process.env.GEMINI_MODEL,
-  "gemini-3.5-flash-lite",
-  "gemini-flash-lite-latest",
-  "gemini-3.5-flash"
-].filter(Boolean);
+// Read model dynamically from environment variable (defaults to gemini-3.5-flash-lite)
+const AI_MODEL = process.env.GEMINI_MODEL || process.env.AI_MODEL || "gemini-3.5-flash-lite";
 
 // Initialize Gemini Client
 const getClient = () => {
@@ -22,24 +17,6 @@ const getClient = () => {
     throw new Error("GEMINI_API_KEY is not configured in .env");
   }
   return new GoogleGenAI({ apiKey });
-};
-
-// Resilient helper to call Gemini with automatic fallback if a model experiences high demand (503)
-const generateWithFallback = async (ai, options) => {
-  let lastError;
-  for (const model of CANDIDATE_MODELS) {
-    try {
-      return await ai.models.generateContent({
-        ...options,
-        model
-      });
-    } catch (err) {
-      lastError = err;
-      const statusMsg = err.status || err.message || "error";
-      console.warn(`[AI Warning] Gemini model "${model}" failed (${statusMsg}). Trying next model...`);
-    }
-  }
-  throw lastError;
 };
 
 // Load company facts for the support bot
@@ -117,7 +94,8 @@ If nothing detected, return: []
   const userText = text && text.trim() ? text.trim() : "Extract order items from this slip.";
   contents.push(userText);
 
-  const response = await generateWithFallback(ai, {
+  const response = await ai.models.generateContent({
+    model: AI_MODEL,
     contents: contents,
     config: {
       systemInstruction: systemPrompt,
@@ -162,7 +140,8 @@ RULES:
 6. Return only bullet points.
 `;
 
-  const response = await generateWithFallback(ai, {
+  const response = await ai.models.generateContent({
+    model: AI_MODEL,
     contents: prompt,
     config: {
       temperature: 0.3
@@ -211,7 +190,8 @@ GUIDELINES:
     parts: [{ text: question }]
   });
 
-  const response = await generateWithFallback(ai, {
+  const response = await ai.models.generateContent({
+    model: AI_MODEL,
     contents: contents,
     config: {
       systemInstruction: systemInstruction,

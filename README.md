@@ -294,78 +294,9 @@ Extracted Structured Database IDs:
 | **Transcription & Alias Errors** | ~15% of all daily orders | **$<$1% error rate** | **93%+ reduction in order errors** |
 | **Warehouse Packing Readiness** | Delayed until 8:00 AM | **Ready at 6:00 AM sharp** | **2 hours saved daily** in truck dispatch |
 | **Delivery Reconciliation** | Manual paper receipts with pen scribbles | **Instant photo scan** of signed challan | **100% audit-proof GST billing** |
-| **Support Phone Inquiries** | 30+ calls daily regarding rates & HSN | **Handled 24/7 by AI Support Chatbot** | **Zero operational overhead** on management |
 
 ---
 
-## 💻 Local Development & Setup Guide
-
-### Prerequisites
-- [Node.js](https://nodejs.org/) (v18 or higher)
-- [PostgreSQL](https://www.postgresql.org/) (v14 or higher)
-- Google Gemini API Key (from [Google AI Studio](https://aistudio.google.com/app/apikey)) or Groq API Key (from [Groq Console](https://console.groq.com/))
-
-### 1. Clone the Repository
-```bash
-git clone https://github.com/VATSAL-SOMALIYA/DADA-ENTERPRISE.git
-cd DADA-ENTERPRISE/backend
-```
-
-### 2. Install Dependencies
-```bash
-npm install
-```
-
-### 3. Configure Environment Variables
-Create a `.env` file in the `backend/` directory:
-```env
-# Database Credentials
-DB_USER=postgres
-DB_PASSWORD=your_postgres_password
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=dada_enterprise
-
-# Application Security
-JWT_SECRET=your_super_secret_jwt_key
-NODE_ENV=development
-PORT=5000
-
-# AI Configuration (Supports Google Gemini or Groq)
-GEMINI_API_KEY=your_gemini_or_groq_api_key
-GEMINI_MODEL=gemini-3.5-flash-lite
-```
-
-### 4. Build Styles & Launch Server
-The application automatically creates required database tables and seeds initial test data on startup:
-```bash
-# Build Tailwind CSS styles
-npm run build:css
-
-# Start the application server
-npm start
-```
-
-Access the application at: `http://localhost:5000`
-
----
-
-## 🔐 Environment Configuration
-
-The application supports both Google Gemini and Groq providers seamlessly through the standard environment variable names:
-
-| Variable | Description | Example / Recommended |
-| :--- | :--- | :--- |
-| `DB_HOST` | PostgreSQL Hostname | `localhost` or Aiven DB host |
-| `DB_PORT` | PostgreSQL Port | `5432` |
-| `DB_USER` | PostgreSQL Username | `postgres` or cloud user |
-| `DB_PASSWORD` | PostgreSQL Password | User password |
-| `DB_NAME` | Database Name | `dada_enterprise` |
-| `JWT_SECRET` | Secret key for signed session cookies | High-entropy string |
-| `GEMINI_API_KEY` | API Key for AI Engine | `AIza...` (Gemini) or `gsk_...` (Groq) |
-| `GEMINI_MODEL` | Target AI Model | `gemini-3.5-flash-lite` or `llama-3.3-70b-versatile` |
-
----
 
 ## 👤 Author & Links
 

@@ -1,7 +1,7 @@
 /**
  * @file aiService.js
  * @description High-speed AI Service for Dada Enterprise with instant auto-fill (<1.5s),
- * model fallback cascade, strict latency timeouts, and dual Gemini + Groq provider support.
+ * model fallback cascade, payload-aware timeouts, and dual Gemini + Groq provider support.
  */
 
 const { GoogleGenAI } = require("@google/genai");
@@ -43,8 +43,7 @@ const getGeminiModels = () => {
   return [
     configured,
     "gemini-flash-lite-latest",
-    "gemini-3.5-flash-lite",
-    "gemini-3.8-flash"
+    "gemini-3.5-flash-lite"
   ].filter((v, i, a) => v && a.indexOf(v) === i);
 };
 
@@ -59,7 +58,7 @@ const getGroqModels = () => {
   ].filter(Boolean);
 };
 
-// Timeout race helper to prevent slow models (like 3.8 during spikes) from hanging user requests
+// Timeout race helper to prevent slow models from hanging user requests
 const callWithTimeout = (promise, ms, modelName) => {
   return Promise.race([
     promise,
@@ -81,9 +80,9 @@ try {
 }
 
 /**
- * Resilient Gemini caller with automatic fallback and strict 3.5s per-model timeout
+ * Resilient Gemini caller with automatic fallback and payload-aware timeout
  */
-async function callGemini({ systemPrompt, contents, temperature = 0.1 }) {
+async function callGemini({ systemPrompt, contents, timeoutMs = 7000, temperature = 0.1 }) {
   const apiKey = getApiKey();
   if (!apiKey) throw new Error("GEMINI_API_KEY is not configured in .env");
 
@@ -93,7 +92,6 @@ async function callGemini({ systemPrompt, contents, temperature = 0.1 }) {
 
   for (const model of models) {
     try {
-      // 3500ms timeout per model attempt so user never waits 30-50s on congested models
       const response = await callWithTimeout(
         ai.models.generateContent({
           model,
@@ -103,7 +101,7 @@ async function callGemini({ systemPrompt, contents, temperature = 0.1 }) {
             temperature
           }
         }),
-        3500,
+        timeoutMs,
         model
       );
 
@@ -111,7 +109,7 @@ async function callGemini({ systemPrompt, contents, temperature = 0.1 }) {
     } catch (err) {
       lastError = err;
       const statusMsg = err.status || err.message || "error";
-      console.warn(`[Gemini Warning] Model "${model}" failed or timed out (${statusMsg}). Switching to fast backup model...`);
+      console.warn(`[Gemini Warning] Model "${model}" failed or timed out (${statusMsg}). Trying fallback...`);
     }
   }
 
@@ -121,7 +119,7 @@ async function callGemini({ systemPrompt, contents, temperature = 0.1 }) {
 /**
  * Executes request via Groq API (OpenAI-compatible format)
  */
-async function callGroq({ systemPrompt, userText, history = [], temperature = 0.1 }) {
+async function callGroq({ systemPrompt, userText, history = [], timeoutMs = 5000, temperature = 0.1 }) {
   const apiKey = getApiKey();
   if (!apiKey) throw new Error("GEMINI_API_KEY / GROQ_API_KEY is not configured in .env");
 
@@ -159,7 +157,7 @@ async function callGroq({ systemPrompt, userText, history = [], temperature = 0.
             temperature
           })
         }).then(r => r.json()),
-        4000,
+        timeoutMs,
         model
       );
 
@@ -183,7 +181,7 @@ exports.extractQuantities = async ({ text, fileBuffer, mimeType, branches, produ
   const productListStr = products.map(p => `ID ${p.id}: "${p.name}" (${p.unit})`).join(", ");
 
   const systemPrompt = `
-You are the AI Order Extraction Engine for Dada Enterprise, a dairy and food distribution company in Gujarat, India.
+You are the AI Order Extraction Engine for Dada Enterprise, a premier dairy and fresh tofu distributor in Gujarat, India.
 Your task is to extract order quantities from user input (slip photo, WhatsApp text, or voice transcript).
 
 VALID BRANCHES:
@@ -193,8 +191,12 @@ VALID PRODUCTS:
 [${productListStr}]
 
 RULES:
-- PRODUCT MAPPING:
-  * "paneer" / "soya paneer" / "tofu" maps to TOFU.
+- TOFU & PANEER MAPPING:
+  * "tofu", "paneer", "hard paneer", "soya paneer", "soy paneer", "panner", "tafu", "soya" ALWAYS map to TOFU (Product ID 1).
+  * If a slip is titled "HARD PANEER CONSUMPTION", "PANEER", "TOFU", or is a slip listing branch quantities without individual product names, ALL branch items map to TOFU (Product ID 1).
+  * If an order specifies quantity in KG (or mentions a branch and a number) without naming another product, map it to TOFU (Product ID 1) as it is Dada Enterprise's primary wholesale product.
+
+- OTHER DAIRY PRODUCTS:
   * "chhas" / "buttermilk" maps to SUMUL BUTTERMILK.
   * "dahi" / "curd" maps to SUMUL PB DAHI (or SUMUL LITE DAHI if specifically says lite).
   * MILK RULES:
@@ -203,18 +205,19 @@ RULES:
   * If no unit is mentioned, assume standard product units (KG for Tofu/Dahi, pouches for Milk/Buttermilk).
 
 - BRANCH ALIAS & LOCATION MAPPING:
-  * "Vastrapur" is also a name / alias for branch "AHM1" (or "AHM-1").
-  * "HL" and "Navrangpura" are names / aliases for branch "AHM-2" (or "AHM2").
-  * "Chandkheda" is also a name / alias for branch "AHM3" (or "AHM-3").
+  * "Vastrapur" is an alias for branch "AMD - 1" (or "AHM1" / "AHM-1").
+  * "HL" and "Navrangpura" are aliases for branch "AMD - 2(NP)" (or "AHM-2" / "AHM2").
+  * "Chandkheda" is an alias for branch "AMD - 3(CK)" (or "AHM3" / "AHM-3").
+  * "Manjalpur" or "Baroda 2" is an alias for branch "Baroda-Manjalpur".
   * For other branches, map to the closest matching valid branch name from the list above.
   * If the customer has only one branch configured, map all items to that branch.
 
 OUTPUT FORMAT:
-Return ONLY a valid JSON array of objects. No markdown formatting.
+Return ONLY a valid JSON array of objects. Use numeric branch_id and product_id:
 [
   {
-    "branch_id": <branch ID>,
-    "product_id": <product ID>,
+    "branch_id": <numeric branch ID>,
+    "product_id": <numeric product ID>,
     "quantity": <number>
   }
 ]
@@ -222,19 +225,22 @@ If nothing detected, return: []
 `;
 
   let rawText = "[]";
+  const hasFile = Boolean(fileBuffer && mimeType);
+  const timeoutMs = hasFile ? 12000 : 7000;
 
   if (isGroq()) {
     const userText = text && text.trim() ? text.trim() : "Extract order items from this slip.";
     rawText = await callGroq({
       systemPrompt,
       userText,
+      timeoutMs,
       temperature: 0.1
     });
   } else {
     const contents = [];
 
     // Add image/audio file if uploaded
-    if (fileBuffer && mimeType) {
+    if (hasFile) {
       contents.push({
         inlineData: {
           data: fileBuffer.toString("base64"),
@@ -250,19 +256,64 @@ If nothing detected, return: []
     rawText = await callGemini({
       systemPrompt,
       contents,
+      timeoutMs,
       temperature: 0.1
     });
   }
 
   const cleaned = (rawText || "[]").replace(/```json/gi, "").replace(/```/g, "").trim();
 
+  let rawData = [];
   try {
-    const data = JSON.parse(cleaned);
-    return Array.isArray(data) ? data : [];
+    const parsed = JSON.parse(cleaned);
+    rawData = Array.isArray(parsed) ? parsed : [];
   } catch (e) {
     console.error("AI JSON parse error:", rawText);
     return [];
   }
+
+  // Robust Normalization & Type-Casting:
+  // Ensures branch_id and product_id are exact numbers matching the database,
+  // resolving any text names or string IDs.
+  const normalizedItems = [];
+  for (const item of rawData) {
+    let bId = parseInt(item.branch_id, 10);
+    let pId = parseInt(item.product_id, 10);
+    let qty = parseFloat(item.quantity);
+
+    // If product_id was returned as text like "TOFU" or "paneer"
+    if (isNaN(pId)) {
+      const pStr = String(item.product_id || item.product_name || item.product || "").toUpperCase();
+      if (pStr.includes("TOFU") || pStr.includes("PANEER")) {
+        const tofuProd = products.find(p => p.name.toUpperCase().includes("TOFU"));
+        if (tofuProd) pId = tofuProd.id;
+      } else {
+        const match = products.find(p => p.name.toUpperCase().includes(pStr));
+        if (match) pId = match.id;
+      }
+    }
+
+    // If branch_id was returned as text like "Adajan" or "AMD - 1"
+    if (isNaN(bId)) {
+      const bStr = String(item.branch_id || item.branch_name || item.branch || "").toUpperCase();
+      const match = branches.find(b => b.branch_name.toUpperCase().includes(bStr));
+      if (match) {
+        bId = match.id;
+      } else if (branches.length === 1) {
+        bId = branches[0].id;
+      }
+    }
+
+    if (!isNaN(bId) && !isNaN(pId) && !isNaN(qty) && qty > 0) {
+      normalizedItems.push({
+        branch_id: bId,
+        product_id: pId,
+        quantity: qty
+      });
+    }
+  }
+
+  return normalizedItems;
 };
 
 /**
